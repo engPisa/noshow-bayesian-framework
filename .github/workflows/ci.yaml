@@ -1,0 +1,63 @@
+name: CI
+
+on:
+    push:
+        branches: ['main']
+    pull_request:
+        branches: ['main']
+
+jobs:
+    commits:
+        runs-on: ubuntu-latest
+        name: Validate Commit Messages
+        if: github.event_name == 'pull_request'
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Conventional commits (somente header, sem body)
+              env:
+                  BASE: ${{ github.event.pull_request.base.sha }}
+                  HEAD: ${{ github.event.pull_request.head.sha }}
+              run: |
+                  PADRAO='^(feat|fix|chore|refactor|docs|test|ci|perf|build|style|revert)(\([a-z0-9-]+\))?!?: .+'
+                  ERROS=0
+                  for SHA in $(git rev-list "$BASE".."$HEAD"); do
+                    HEADER=$(git log -1 --format=%s "$SHA")
+                    BODY=$(git log -1 --format=%b "$SHA")
+                    if ! echo "$HEADER" | grep -qE "$PADRAO"; then
+                      echo "::error::$SHA não segue conventional commits: $HEADER"
+                      ERROS=$((ERROS+1))
+                    fi
+                    if [ -n "$BODY" ]; then
+                      echo "::error::$SHA tem body; o padrão do projeto é somente o header: $HEADER"
+                      ERROS=$((ERROS+1))
+                    fi
+                  done
+                  [ "$ERROS" -eq 0 ] && echo "✅ Todos os commits seguem o padrão." || exit 1
+
+    test:
+        runs-on: ubuntu-latest
+        name: Test (pytest)
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Setup Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: '3.12'
+                  cache: 'pip'
+
+            - name: Install dependencies
+              run: pip install -r requirements.txt -e .
+
+            - name: Run tests
+              env:
+                  PYTHONHASHSEED: '0'
+              # código 5 = nenhum teste coletado (fases iniciais, antes de existir tests/)
+              run: pytest tests -q || [ $? -eq 5 ]
