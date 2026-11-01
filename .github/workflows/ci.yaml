@@ -59,5 +59,9 @@ jobs:
             - name: Run tests
               env:
                   PYTHONHASHSEED: '0'
-              # código 5 = nenhum teste coletado (fases iniciais, antes de existir tests/)
-              run: python -m pytest tests -q || [ $? -eq 5 ]
+              run: |
+                  if [ -d tests ]; then
+                    python -m pytest tests -q
+                  else
+                    echo "Sem testes nesta fase (tests/ ainda não existe)."
+                  fi
