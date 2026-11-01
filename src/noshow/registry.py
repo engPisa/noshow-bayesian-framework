@@ -41,6 +41,23 @@ EXPERIMENTOS = {
                    "chave gênero + cidade + data de entrada + deficiência (cobertura de ID de 78% para 89%).",
         "base": "aproximado", "categoricas": CATEGORICAL_V2, "continuas": CONTINUOUS_V2,
     },
+    "v4": {
+        "titulo": "Recalibração trimestral",
+        "mudanca": "Mesmos dados e variáveis da v3. Na divisão temporal, os modelos são retreinados a cada trimestre do "
+                   "teste com tudo o que já era conhecido no início do trimestre (treino + desfechos dos trimestres "
+                   "anteriores; janela expansiva). Hiperparâmetros escolhidos uma vez, só no treino, como na v3. "
+                   "A divisão agrupada não tem ordem no tempo e fica igual à v3.",
+        "base": "aproximado", "categoricas": CATEGORICAL_V2, "continuas": CONTINUOUS_V2,
+        "recalibracao": "trimestral",
+    },
+    "v5": {
+        "titulo": "Recalibração trimestral com janela deslizante de 12 meses",
+        "mudanca": "Igual à v4, mas cada retreino usa só os agendamentos dos 12 meses anteriores ao trimestre, em vez "
+                   "de todo o passado, para acompanhar a deriva mais rápido. As variáveis de histórico do paciente "
+                   "continuam calculadas com todo o passado dele; a janela limita apenas as linhas de treino.",
+        "base": "aproximado", "categoricas": CATEGORICAL_V2, "continuas": CONTINUOUS_V2,
+        "recalibracao": "trimestral", "janela_meses": 12,
+    },
 }
 MODELOS = ["RB (BIC)", "RB (AIC)", "Regressão logística", "LightGBM"]
 
@@ -59,6 +76,14 @@ def splits(bases: dict[str, pd.DataFrame]) -> dict[str, tuple[np.ndarray, np.nda
     """
     grupos = patient_groups(bases["aproximado"].patient_id)
     return {"agrupada": group_holdout(grupos, 0.3), "temporal": temporal_holdout(bases["exato"].appointment_date, 0.7)}
+
+
+def _tune(Xtr, ytr, cat, cont, internas, n_trials):
+    """Escolhe os hiperparâmetros da logística e do LightGBM só com o treino original (validação interna)."""
+    _, info_lr = fit_logistic(Xtr, ytr, cat, cont, internas)
+    _, _, info_gb = fit_lightgbm(Xtr, ytr, cat, cont, internas, n_trials=n_trials)
+    return {"C": info_lr["C"], "auc_interna_lr": info_lr["auc_interna"],
+            "lgbm": {k: v for k, v in info_gb.items() if k != "auc_interna"}, "auc_interna_lgbm": info_gb["auc_interna"]}
 
 
 def _fit_models(Xtr, ytr, Xte, cat, cont, internas, n_trials, fixos=None):
@@ -84,6 +109,46 @@ def _fit_models(Xtr, ytr, Xte, cat, cont, internas, n_trials, fixos=None):
     return res, fixos
 
 
+def recalibration_blocks(dates: pd.Series, tr: np.ndarray, te: np.ndarray, freq: str = "Q",
+                         janela_meses: int | None = None):
+    """Para cada trimestre do teste: (rótulo, índices de treino, posições em `te` a prever).
+
+    O treino de um trimestre é o treino original + as linhas de teste com data anterior ao início do trimestre.
+    Com `janela_meses`, só entram as linhas dos últimos `janela_meses` meses antes do início do trimestre.
+    """
+    datas_te = dates.iloc[te].reset_index(drop=True)
+    periodos = datas_te.dt.to_period(freq)
+    for q in sorted(periodos.unique()):
+        conhecidos = np.concatenate([tr, te[(datas_te < q.start_time).to_numpy()]])
+        if janela_meses is not None:
+            inicio = q.start_time - pd.DateOffset(months=janela_meses)
+            conhecidos = conhecidos[(dates.iloc[conhecidos] >= inicio).to_numpy()]
+        yield q, conhecidos, np.where(periodos == q)[0]
+
+
+def _fit_recalibrado(base, X, y, tr, te, cat, cont, internas, n_trials, verbose, janela_meses=None):
+    """Retreina a cada trimestre do teste com o treino + os desfechos dos trimestres anteriores."""
+    preds = {m: np.empty(len(te)) for m in MODELOS}
+    info_final, mantos = {}, []
+    # hiperparâmetros escolhidos uma vez, com o treino original; os retreinos só reajustam os modelos
+    fixos = _tune(X.iloc[tr], y[tr], cat, cont, internas, n_trials)
+    for q, tr_q, pos in recalibration_blocks(base.appointment_date, tr, te, janela_meses=janela_meses):
+        res, _ = _fit_models(X.iloc[tr_q], y[tr_q], X.iloc[te[pos]], cat, cont, None, n_trials, fixos)
+        for m, (p, info) in res.items():
+            preds[m][pos] = p
+            info_final[m] = info
+        mantos.append({"trimestre": str(q), "n_treino": len(tr_q), "faltas_treino": int(y[tr_q].sum()),
+                       "n_teste": len(pos),
+                       **{m: res[m][1]["manto"] for m in MODELOS if m.startswith("RB")}})
+        if verbose:
+            print(f"  recalibração {q}: treino {len(tr_q):,} | teste {len(pos):,}", flush=True)
+    info_final["Regressão logística"]["auc_interna"] = fixos["auc_interna_lr"]
+    info_final["LightGBM"]["auc_interna"] = fixos["auc_interna_lgbm"]
+    for m in MODELOS:
+        info_final[m] = {**info_final[m], "recalibracoes": len(mantos), "mantos_por_trimestre": mantos}
+    return {m: (preds[m], info_final[m]) for m in MODELOS}
+
+
 def run(versao: str, n_trials: int = 30, verbose: bool = True) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Executa a versão nas duas divisões e salva métricas, predições e hiperparâmetros."""
     warnings.filterwarnings("ignore")
@@ -101,14 +166,19 @@ def run(versao: str, n_trials: int = 30, verbose: bool = True) -> tuple[pd.DataF
         Xtr, Xte, ytr, yte = X.iloc[tr], X.iloc[te], y[tr], y[te]
         internas = inner_splits(base.appointment_date.iloc[tr], ytr, grupos[tr],
                                 "temporal" if divisao == "temporal" else "grupo")
-        res, _ = _fit_models(Xtr, ytr, Xte, cat, cont, internas, n_trials)
+        if divisao == "temporal" and cfg.get("recalibracao") == "trimestral":
+            res = _fit_recalibrado(base, X, y, tr, te, cat, cont, internas, n_trials, verbose,
+                                   janela_meses=cfg.get("janela_meses"))
+        else:
+            res, _ = _fit_models(Xtr, ytr, Xte, cat, cont, internas, n_trials)
 
         for modelo, (p, info) in res.items():
             metricas.append({"versao": versao, "divisao": divisao, "modelo": modelo, "n_treino": len(tr),
                              "n_teste": len(te), "n_variaveis": len(cat + cont),
                              "roc_auc": roc_auc_score(yte, p), "pr_auc": average_precision_score(yte, p),
                              "brier": brier_score_loss(yte, p), "p_media": float(np.mean(p)),
-                             **{k: info[k] for k in ("manto", "n_params", "C", "auc_interna") if k in info}})
+                             **{k: info[k] for k in ("manto", "n_params", "C", "auc_interna", "recalibracoes")
+                                if k in info}})
             predicoes.append(pd.DataFrame({"versao": versao, "divisao": divisao, "modelo": modelo,
                                            "linha": te, "grupo": grupos[te], "y": yte, "p": p}))
             params[f"{divisao}|{modelo}"] = {k: (v.item() if isinstance(v, np.generic) else v) for k, v in info.items()}
