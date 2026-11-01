@@ -1,0 +1,90 @@
+{
+ "config": {
+  "titulo": "Ligação aproximada de pacientes",
+  "mudanca": "Mesmas variáveis da v2, com o ID aproximado: registros sem data de nascimento são ligados pela chave gênero + cidade + data de entrada + deficiência (cobertura de ID de 78% para 89%).",
+  "base": "aproximado",
+  "categoricas": [
+   "faixa_etaria",
+   "gender",
+   "disability",
+   "city_grp",
+   "cid_capitulo",
+   "cadastro_ausente",
+   "specialty_grp",
+   "patient_needs_companion",
+   "heat_intensity",
+   "rain_intensity",
+   "dia_semana",
+   "faixa_horaria",
+   "mes",
+   "estacao",
+   "periodo",
+   "faltou_ultima",
+   "perto_feriado",
+   "id_qualidade"
+  ],
+  "continuas": [
+   "idade_consulta",
+   "consultas_no_dia",
+   "max_temp_day",
+   "max_rain_day",
+   "dias_em_servico",
+   "n_agendamentos_anteriores",
+   "n_faltas_anteriores",
+   "taxa_faltas_anteriores",
+   "dias_desde_ultima_consulta",
+   "faltas_ult3",
+   "faltas_ult5",
+   "faltas_seguidas",
+   "taxa_faltas_90d",
+   "taxa_faltas_especialidade",
+   "ordem_no_dia"
+  ]
+ },
+ "modelos": {
+  "agrupada|RB (BIC)": {
+   "manto": "periodo, taxa_faltas_anteriores",
+   "n_params": 25
+  },
+  "agrupada|RB (AIC)": {
+   "manto": "mes, periodo, taxa_faltas_anteriores",
+   "n_params": 256
+  },
+  "agrupada|Regressão logística": {
+   "C": 0.01,
+   "auc_interna": 0.6541498904150709
+  },
+  "agrupada|LightGBM": {
+   "n_estimators": 400,
+   "learning_rate": 0.02374553702622325,
+   "num_leaves": 35,
+   "min_child_samples": 29,
+   "colsample_bytree": 0.407821381573872,
+   "reg_lambda": 20.96080724640234,
+   "cat_smooth": 15.412694951161543,
+   "auc_interna": 0.6819107157608516
+  },
+  "temporal|RB (BIC)": {
+   "manto": "taxa_faltas_90d",
+   "n_params": 9
+  },
+  "temporal|RB (AIC)": {
+   "manto": "idade_consulta, mes, taxa_faltas_90d",
+   "n_params": 424
+  },
+  "temporal|Regressão logística": {
+   "C": 0.003,
+   "auc_interna": 0.5762693736943652
+  },
+  "temporal|LightGBM": {
+   "n_estimators": 200,
+   "learning_rate": 0.012678867471097182,
+   "num_leaves": 53,
+   "min_child_samples": 26,
+   "colsample_bytree": 0.5160489630541771,
+   "reg_lambda": 1.1620686067087345,
+   "cat_smooth": 58.70203237758191,
+   "auc_interna": 0.577210756599863
+  }
+ }
+}
