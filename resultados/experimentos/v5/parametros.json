@@ -1,0 +1,456 @@
+{
+ "config": {
+  "titulo": "Recalibração trimestral com janela deslizante de 12 meses",
+  "mudanca": "Igual à v4, mas cada retreino usa só os agendamentos dos 12 meses anteriores ao trimestre, em vez de todo o passado, para acompanhar a deriva mais rápido. As variáveis de histórico do paciente continuam calculadas com todo o passado dele; a janela limita apenas as linhas de treino.",
+  "base": "aproximado",
+  "categoricas": [
+   "faixa_etaria",
+   "gender",
+   "disability",
+   "city_grp",
+   "cid_capitulo",
+   "cadastro_ausente",
+   "specialty_grp",
+   "patient_needs_companion",
+   "heat_intensity",
+   "rain_intensity",
+   "dia_semana",
+   "faixa_horaria",
+   "mes",
+   "estacao",
+   "periodo",
+   "faltou_ultima",
+   "perto_feriado",
+   "id_qualidade"
+  ],
+  "continuas": [
+   "idade_consulta",
+   "consultas_no_dia",
+   "max_temp_day",
+   "max_rain_day",
+   "dias_em_servico",
+   "n_agendamentos_anteriores",
+   "n_faltas_anteriores",
+   "taxa_faltas_anteriores",
+   "dias_desde_ultima_consulta",
+   "faltas_ult3",
+   "faltas_ult5",
+   "faltas_seguidas",
+   "taxa_faltas_90d",
+   "taxa_faltas_especialidade",
+   "ordem_no_dia"
+  ],
+  "recalibracao": "trimestral",
+  "janela_meses": 12
+ },
+ "modelos": {
+  "agrupada|RB (BIC)": {
+   "manto": "periodo, taxa_faltas_anteriores",
+   "n_params": 25
+  },
+  "agrupada|RB (AIC)": {
+   "manto": "mes, periodo, taxa_faltas_anteriores",
+   "n_params": 256
+  },
+  "agrupada|Regressão logística": {
+   "C": 0.01,
+   "auc_interna": 0.6541498904150709
+  },
+  "agrupada|LightGBM": {
+   "n_estimators": 400,
+   "learning_rate": 0.02374553702622325,
+   "num_leaves": 35,
+   "min_child_samples": 29,
+   "colsample_bytree": 0.407821381573872,
+   "reg_lambda": 20.96080724640234,
+   "cat_smooth": 15.412694951161543,
+   "auc_interna": 0.6819107157608516
+  },
+  "temporal|RB (BIC)": {
+   "manto": "taxa_faltas_anteriores",
+   "n_params": 11,
+   "recalibracoes": 11,
+   "mantos_por_trimestre": [
+    {
+     "trimestre": "2019Q3",
+     "n_treino": 8235,
+     "faltas_treino": 928,
+     "n_teste": 1236,
+     "RB (BIC)": "estacao",
+     "RB (AIC)": "faltas_ult3, mes"
+    },
+    {
+     "trimestre": "2019Q4",
+     "n_treino": 8591,
+     "faltas_treino": 1000,
+     "n_teste": 2795,
+     "RB (BIC)": "estacao",
+     "RB (AIC)": "mes, taxa_faltas_90d"
+    },
+    {
+     "trimestre": "2020Q1",
+     "n_treino": 8584,
+     "faltas_treino": 1056,
+     "n_teste": 156,
+     "RB (BIC)": "estacao",
+     "RB (AIC)": "consultas_no_dia, estacao, gender"
+    },
+    {
+     "trimestre": "2020Q2",
+     "n_treino": 7351,
+     "faltas_treino": 855,
+     "n_teste": 30,
+     "RB (BIC)": "gender",
+     "RB (AIC)": "dia_semana, faltas_ult3, gender"
+    },
+    {
+     "trimestre": "2020Q3",
+     "n_treino": 5881,
+     "faltas_treino": 679,
+     "n_teste": 331,
+     "RB (BIC)": "gender",
+     "RB (AIC)": "mes, n_faltas_anteriores"
+    },
+    {
+     "trimestre": "2020Q4",
+     "n_treino": 3312,
+     "faltas_treino": 410,
+     "n_teste": 387,
+     "RB (BIC)": "gender",
+     "RB (AIC)": "faltas_seguidas, gender, mes"
+    },
+    {
+     "trimestre": "2021Q1",
+     "n_treino": 904,
+     "faltas_treino": 126,
+     "n_teste": 1366,
+     "RB (BIC)": "faixa_horaria",
+     "RB (AIC)": "city_grp, gender"
+    },
+    {
+     "trimestre": "2021Q2",
+     "n_treino": 2114,
+     "faltas_treino": 264,
+     "n_teste": 2819,
+     "RB (BIC)": "faltas_ult3",
+     "RB (AIC)": "mes, taxa_faltas_90d"
+    },
+    {
+     "trimestre": "2021Q3",
+     "n_treino": 4903,
+     "faltas_treino": 741,
+     "n_teste": 3058,
+     "RB (BIC)": "estacao",
+     "RB (AIC)": "faixa_horaria, mes"
+    },
+    {
+     "trimestre": "2021Q4",
+     "n_treino": 7630,
+     "faltas_treino": 1122,
+     "n_teste": 1765,
+     "RB (BIC)": "taxa_faltas_anteriores",
+     "RB (AIC)": "mes, patient_needs_companion, taxa_faltas_anteriores"
+    },
+    {
+     "trimestre": "2022Q1",
+     "n_treino": 9008,
+     "faltas_treino": 1361,
+     "n_teste": 942,
+     "RB (BIC)": "taxa_faltas_anteriores",
+     "RB (AIC)": "mes, patient_needs_companion, taxa_faltas_anteriores"
+    }
+   ]
+  },
+  "temporal|RB (AIC)": {
+   "manto": "mes, patient_needs_companion, taxa_faltas_anteriores",
+   "n_params": 216,
+   "recalibracoes": 11,
+   "mantos_por_trimestre": [
+    {
+     "trimestre": "2019Q3",
+     "n_treino": 8235,
+     "faltas_treino": 928,
+     "n_teste": 1236,
+     "RB (BIC)": "estacao",
+     "RB (AIC)": "faltas_ult3, mes"
+    },
+    {
+     "trimestre": "2019Q4",
+     "n_treino": 8591,
+     "faltas_treino": 1000,
+     "n_teste": 2795,
+     "RB (BIC)": "estacao",
+     "RB (AIC)": "mes, taxa_faltas_90d"
+    },
+    {
+     "trimestre": "2020Q1",
+     "n_treino": 8584,
+     "faltas_treino": 1056,
+     "n_teste": 156,
+     "RB (BIC)": "estacao",
+     "RB (AIC)": "consultas_no_dia, estacao, gender"
+    },
+    {
+     "trimestre": "2020Q2",
+     "n_treino": 7351,
+     "faltas_treino": 855,
+     "n_teste": 30,
+     "RB (BIC)": "gender",
+     "RB (AIC)": "dia_semana, faltas_ult3, gender"
+    },
+    {
+     "trimestre": "2020Q3",
+     "n_treino": 5881,
+     "faltas_treino": 679,
+     "n_teste": 331,
+     "RB (BIC)": "gender",
+     "RB (AIC)": "mes, n_faltas_anteriores"
+    },
+    {
+     "trimestre": "2020Q4",
+     "n_treino": 3312,
+     "faltas_treino": 410,
+     "n_teste": 387,
+     "RB (BIC)": "gender",
+     "RB (AIC)": "faltas_seguidas, gender, mes"
+    },
+    {
+     "trimestre": "2021Q1",
+     "n_treino": 904,
+     "faltas_treino": 126,
+     "n_teste": 1366,
+     "RB (BIC)": "faixa_horaria",
+     "RB (AIC)": "city_grp, gender"
+    },
+    {
+     "trimestre": "2021Q2",
+     "n_treino": 2114,
+     "faltas_treino": 264,
+     "n_teste": 2819,
+     "RB (BIC)": "faltas_ult3",
+     "RB (AIC)": "mes, taxa_faltas_90d"
+    },
+    {
+     "trimestre": "2021Q3",
+     "n_treino": 4903,
+     "faltas_treino": 741,
+     "n_teste": 3058,
+     "RB (BIC)": "estacao",
+     "RB (AIC)": "faixa_horaria, mes"
+    },
+    {
+     "trimestre": "2021Q4",
+     "n_treino": 7630,
+     "faltas_treino": 1122,
+     "n_teste": 1765,
+     "RB (BIC)": "taxa_faltas_anteriores",
+     "RB (AIC)": "mes, patient_needs_companion, taxa_faltas_anteriores"
+    },
+    {
+     "trimestre": "2022Q1",
+     "n_treino": 9008,
+     "faltas_treino": 1361,
+     "n_teste": 942,
+     "RB (BIC)": "taxa_faltas_anteriores",
+     "RB (AIC)": "mes, patient_needs_companion, taxa_faltas_anteriores"
+    }
+   ]
+  },
+  "temporal|Regressão logística": {
+   "C": 0.003,
+   "auc_interna": 0.5762693736943652,
+   "recalibracoes": 11,
+   "mantos_por_trimestre": [
+    {
+     "trimestre": "2019Q3",
+     "n_treino": 8235,
+     "faltas_treino": 928,
+     "n_teste": 1236,
+     "RB (BIC)": "estacao",
+     "RB (AIC)": "faltas_ult3, mes"
+    },
+    {
+     "trimestre": "2019Q4",
+     "n_treino": 8591,
+     "faltas_treino": 1000,
+     "n_teste": 2795,
+     "RB (BIC)": "estacao",
+     "RB (AIC)": "mes, taxa_faltas_90d"
+    },
+    {
+     "trimestre": "2020Q1",
+     "n_treino": 8584,
+     "faltas_treino": 1056,
+     "n_teste": 156,
+     "RB (BIC)": "estacao",
+     "RB (AIC)": "consultas_no_dia, estacao, gender"
+    },
+    {
+     "trimestre": "2020Q2",
+     "n_treino": 7351,
+     "faltas_treino": 855,
+     "n_teste": 30,
+     "RB (BIC)": "gender",
+     "RB (AIC)": "dia_semana, faltas_ult3, gender"
+    },
+    {
+     "trimestre": "2020Q3",
+     "n_treino": 5881,
+     "faltas_treino": 679,
+     "n_teste": 331,
+     "RB (BIC)": "gender",
+     "RB (AIC)": "mes, n_faltas_anteriores"
+    },
+    {
+     "trimestre": "2020Q4",
+     "n_treino": 3312,
+     "faltas_treino": 410,
+     "n_teste": 387,
+     "RB (BIC)": "gender",
+     "RB (AIC)": "faltas_seguidas, gender, mes"
+    },
+    {
+     "trimestre": "2021Q1",
+     "n_treino": 904,
+     "faltas_treino": 126,
+     "n_teste": 1366,
+     "RB (BIC)": "faixa_horaria",
+     "RB (AIC)": "city_grp, gender"
+    },
+    {
+     "trimestre": "2021Q2",
+     "n_treino": 2114,
+     "faltas_treino": 264,
+     "n_teste": 2819,
+     "RB (BIC)": "faltas_ult3",
+     "RB (AIC)": "mes, taxa_faltas_90d"
+    },
+    {
+     "trimestre": "2021Q3",
+     "n_treino": 4903,
+     "faltas_treino": 741,
+     "n_teste": 3058,
+     "RB (BIC)": "estacao",
+     "RB (AIC)": "faixa_horaria, mes"
+    },
+    {
+     "trimestre": "2021Q4",
+     "n_treino": 7630,
+     "faltas_treino": 1122,
+     "n_teste": 1765,
+     "RB (BIC)": "taxa_faltas_anteriores",
+     "RB (AIC)": "mes, patient_needs_companion, taxa_faltas_anteriores"
+    },
+    {
+     "trimestre": "2022Q1",
+     "n_treino": 9008,
+     "faltas_treino": 1361,
+     "n_teste": 942,
+     "RB (BIC)": "taxa_faltas_anteriores",
+     "RB (AIC)": "mes, patient_needs_companion, taxa_faltas_anteriores"
+    }
+   ]
+  },
+  "temporal|LightGBM": {
+   "n_estimators": 200,
+   "learning_rate": 0.012678867471097182,
+   "num_leaves": 53,
+   "min_child_samples": 26,
+   "colsample_bytree": 0.5160489630541771,
+   "reg_lambda": 1.1620686067087345,
+   "cat_smooth": 58.70203237758191,
+   "auc_interna": 0.577210756599863,
+   "recalibracoes": 11,
+   "mantos_por_trimestre": [
+    {
+     "trimestre": "2019Q3",
+     "n_treino": 8235,
+     "faltas_treino": 928,
+     "n_teste": 1236,
+     "RB (BIC)": "estacao",
+     "RB (AIC)": "faltas_ult3, mes"
+    },
+    {
+     "trimestre": "2019Q4",
+     "n_treino": 8591,
+     "faltas_treino": 1000,
+     "n_teste": 2795,
+     "RB (BIC)": "estacao",
+     "RB (AIC)": "mes, taxa_faltas_90d"
+    },
+    {
+     "trimestre": "2020Q1",
+     "n_treino": 8584,
+     "faltas_treino": 1056,
+     "n_teste": 156,
+     "RB (BIC)": "estacao",
+     "RB (AIC)": "consultas_no_dia, estacao, gender"
+    },
+    {
+     "trimestre": "2020Q2",
+     "n_treino": 7351,
+     "faltas_treino": 855,
+     "n_teste": 30,
+     "RB (BIC)": "gender",
+     "RB (AIC)": "dia_semana, faltas_ult3, gender"
+    },
+    {
+     "trimestre": "2020Q3",
+     "n_treino": 5881,
+     "faltas_treino": 679,
+     "n_teste": 331,
+     "RB (BIC)": "gender",
+     "RB (AIC)": "mes, n_faltas_anteriores"
+    },
+    {
+     "trimestre": "2020Q4",
+     "n_treino": 3312,
+     "faltas_treino": 410,
+     "n_teste": 387,
+     "RB (BIC)": "gender",
+     "RB (AIC)": "faltas_seguidas, gender, mes"
+    },
+    {
+     "trimestre": "2021Q1",
+     "n_treino": 904,
+     "faltas_treino": 126,
+     "n_teste": 1366,
+     "RB (BIC)": "faixa_horaria",
+     "RB (AIC)": "city_grp, gender"
+    },
+    {
+     "trimestre": "2021Q2",
+     "n_treino": 2114,
+     "faltas_treino": 264,
+     "n_teste": 2819,
+     "RB (BIC)": "faltas_ult3",
+     "RB (AIC)": "mes, taxa_faltas_90d"
+    },
+    {
+     "trimestre": "2021Q3",
+     "n_treino": 4903,
+     "faltas_treino": 741,
+     "n_teste": 3058,
+     "RB (BIC)": "estacao",
+     "RB (AIC)": "faixa_horaria, mes"
+    },
+    {
+     "trimestre": "2021Q4",
+     "n_treino": 7630,
+     "faltas_treino": 1122,
+     "n_teste": 1765,
+     "RB (BIC)": "taxa_faltas_anteriores",
+     "RB (AIC)": "mes, patient_needs_companion, taxa_faltas_anteriores"
+    },
+    {
+     "trimestre": "2022Q1",
+     "n_treino": 9008,
+     "faltas_treino": 1361,
+     "n_teste": 942,
+     "RB (BIC)": "taxa_faltas_anteriores",
+     "RB (AIC)": "mes, patient_needs_companion, taxa_faltas_anteriores"
+    }
+   ]
+  }
+ }
+}
