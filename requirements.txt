@@ -1,0 +1,10 @@
+pandas>=2.2
+numpy>=1.26
+scikit-learn>=1.5
+imbalanced-learn>=0.12
+pgmpy>=0.1.26
+scipy>=1.13
+matplotlib>=3.8
+seaborn>=0.13
+jupyter
+ipykernel
