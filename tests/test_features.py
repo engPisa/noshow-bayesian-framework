@@ -114,3 +114,67 @@ def test_cadastro_ausente_detecta_bloco_vazio_antes_de_preencher():
     out = group_categories(df)
     assert out["cadastro_ausente"].tolist() == ["0", "1"]
     assert out["disability"].tolist() == ["motor", "ausente"]
+
+
+def _agenda_v2(rows):
+    df = pd.DataFrame(rows, columns=["patient_id", "appointment_date", "appointment_time", "specialty_grp", "no_show"])
+    df["appointment_date"] = pd.to_datetime(df["appointment_date"])
+    df["patient_id"] = df["patient_id"].astype("Int64")
+    return df
+
+
+def test_historico_recente_sequencia_e_janela_de_90_dias():
+    from noshow.features import add_recent_history
+    df = add_recent_history(_agenda_v2([
+        (1, "2020-01-06", "08:00", "fono", 1),
+        (1, "2020-01-13", "08:00", "fono", 1),
+        (1, "2020-01-20", "08:00", "fono", 0),
+        (1, "2020-01-27", "08:00", "fono", 1),
+        (1, "2020-06-01", "08:00", "fono", 0),  # > 90 dias depois das anteriores
+    ]))
+    assert np.isnan(df["faltas_ult3"].iloc[0])  # primeiro dia: sem histórico
+    assert df["faltas_ult3"].tolist()[1:] == [1, 2, 2, 2]
+    assert df["faltas_seguidas"].tolist()[1:] == [1, 2, 0, 1]
+    assert df["taxa_faltas_90d"].iloc[3] == pytest.approx(2 / 3)  # não inclui o próprio dia
+    assert np.isnan(df["taxa_faltas_90d"].iloc[4])  # nada nos 90 dias anteriores
+
+
+def test_historico_por_especialidade_e_ordem_no_dia():
+    from noshow.features import add_recent_history
+    df = add_recent_history(_agenda_v2([
+        (1, "2020-01-06", "08:00", "fono", 1),
+        (1, "2020-01-06", "09:00", "fisio", 0),
+        (1, "2020-01-13", "10:00", "fisio", 0),
+        (1, "2020-01-13", "08:00", "fono", 0),
+    ]))
+    d = df.set_index(["appointment_date", "specialty_grp"])
+    assert d.loc[(pd.Timestamp("2020-01-13"), "fono"), "taxa_faltas_especialidade"] == 1.0
+    assert d.loc[(pd.Timestamp("2020-01-13"), "fisio"), "taxa_faltas_especialidade"] == 0.0
+    assert np.isnan(d.loc[(pd.Timestamp("2020-01-06"), "fono"), "taxa_faltas_especialidade"])
+    assert d.loc[(pd.Timestamp("2020-01-13"), "fono"), "ordem_no_dia"] == 1
+    assert d.loc[(pd.Timestamp("2020-01-13"), "fisio"), "ordem_no_dia"] == 2
+
+
+def test_proximidade_de_feriado():
+    from noshow.features import holiday_proximity
+    datas = pd.Series(pd.to_datetime(["2019-12-24", "2019-12-23", "2019-11-01", "2019-11-04", "2019-07-10"]))
+    # 24/12 é ponto facultativo (véspera de Natal); 02/11 é Finados
+    assert holiday_proximity(datas).tolist() == ["feriado", "vespera", "vespera", "semana_de_feriado", "nao"]
+
+
+def test_ligacao_aproximada_de_pacientes():
+    from noshow.data import add_patient_proxy
+    base = dict(gender="M", city="ITAJAÍ", disability="motor")
+    df = pd.DataFrame([
+        {**base, "date_of_birth": pd.Timestamp("2010-01-01"), "entry_service_date": pd.Timestamp("2019-01-01")},
+        {**base, "date_of_birth": pd.NaT, "entry_service_date": pd.Timestamp("2019-01-01")},   # liga ao paciente 1
+        {**base, "date_of_birth": pd.NaT, "entry_service_date": pd.Timestamp("2020-05-05")},   # paciente novo
+        {**base, "date_of_birth": pd.NaT, "entry_service_date": pd.NaT},                       # sem chave
+    ])
+    exato = add_patient_proxy(df)
+    assert exato["patient_id"].isna().tolist() == [False, True, True, True]
+    out = add_patient_proxy(df, relaxed=True)
+    assert out["patient_id"].iloc[1] == out["patient_id"].iloc[0]
+    assert pd.notna(out["patient_id"].iloc[2]) and out["patient_id"].iloc[2] != out["patient_id"].iloc[0]
+    assert pd.isna(out["patient_id"].iloc[3])
+    assert out["id_qualidade"].tolist() == ["exato", "aproximado", "aproximado", "ausente"]
