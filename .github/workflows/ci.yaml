@@ -54,10 +54,10 @@ jobs:
                   cache: 'pip'
 
             - name: Install dependencies
-              run: pip install -r requirements.txt -e .
+              run: pip install -r requirements.txt pytest -e .
 
             - name: Run tests
               env:
                   PYTHONHASHSEED: '0'
               # código 5 = nenhum teste coletado (fases iniciais, antes de existir tests/)
-              run: pytest tests -q || [ $? -eq 5 ]
+              run: python -m pytest tests -q || [ $? -eq 5 ]
