@@ -58,6 +58,21 @@ FEATURES = {
 CATEGORICAL = [f for f, (t, _) in FEATURES.items() if t == "categorical"]
 CONTINUOUS = [f for f, (t, _) in FEATURES.items() if t == "continuous"]
 
+# Versão 2 (notebook 05): histórico recente e por especialidade, feriados, ordem no dia e qualidade do ID.
+FEATURES_V2 = {
+    **FEATURES,
+    "faltas_ult3": ("continuous", "comportamental"),
+    "faltas_ult5": ("continuous", "comportamental"),
+    "faltas_seguidas": ("continuous", "comportamental"),
+    "taxa_faltas_90d": ("continuous", "comportamental"),
+    "taxa_faltas_especialidade": ("continuous", "comportamental"),
+    "ordem_no_dia": ("continuous", "contextual"),
+    "perto_feriado": ("categorical", "temporal"),
+    "id_qualidade": ("categorical", "comportamental"),
+}
+CATEGORICAL_V2 = [f for f, (t, _) in FEATURES_V2.items() if t == "categorical"]
+CONTINUOUS_V2 = [f for f, (t, _) in FEATURES_V2.items() if t == "continuous"]
+
 
 def add_age(df: pd.DataFrame) -> pd.DataFrame:
     """Idade na data da consulta (a coluna `age` original é a idade na extração da base, ~2022)."""
@@ -83,7 +98,23 @@ def add_calendar(df: pd.DataFrame) -> pd.DataFrame:
     df["estacao"] = date.dt.month.map(SEASONS)
     df["periodo"] = pd.cut(date.dt.year, [0, 2019, 2021, np.inf], labels=["pre_pandemia", "pandemia", "pos_2022"]
                            ).astype("string")
+    df["perto_feriado"] = holiday_proximity(date)
     return df
+
+
+def holiday_proximity(dates: pd.Series) -> pd.Series:
+    """Posição em relação a feriados nacionais/SC e pontos facultativos (Carnaval, Corpus Christi, vésperas)."""
+    import holidays
+
+    anos = range(dates.dt.year.min() - 1, dates.dt.year.max() + 2)
+    feriados = pd.DatetimeIndex(sorted(holidays.Brazil(subdiv="SC", years=anos, categories=("public", "optional"))))
+    unicas = pd.Series(pd.to_datetime(dates.unique()))
+    pos = feriados.searchsorted(unicas)
+    proximo = (feriados[np.minimum(pos, len(feriados) - 1)] - unicas.to_numpy()).days
+    anterior = (unicas.to_numpy() - feriados[np.maximum(pos - 1, 0)]).days
+    rotulo = np.select([proximo == 0, proximo == 1, anterior == 1, np.minimum(proximo, anterior) <= 4],
+                       ["feriado", "vespera", "dia_seguinte", "semana_de_feriado"], "nao")
+    return dates.map(dict(zip(unicas, rotulo)))
 
 
 def group_categories(df: pd.DataFrame, min_city: int = 300) -> pd.DataFrame:
@@ -149,14 +180,61 @@ def add_patient_history(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def build_features(df: pd.DataFrame | None = None) -> pd.DataFrame:
-    """Base completa: carga, correção do clima, ID aproximado e todas as variáveis de FEATURES."""
-    df = add_patient_proxy(fix_weather(load_raw())) if df is None else df
+def add_recent_history(df: pd.DataFrame) -> pd.DataFrame:
+    """Histórico recente, sequência de faltas e histórico na mesma especialidade (só dias anteriores).
+
+    Um "dia de falta" é um dia em que o paciente faltou a ao menos uma consulta. Exige `patient_id`.
+    """
+    df = df.copy()
+    known = df["patient_id"].notna()
+    dias = (df[known].groupby(["patient_id", "appointment_date"])[TARGET]
+            .agg(consultas="size", faltas="sum").reset_index().sort_values(["patient_id", "appointment_date"]))
+    dias["dia_falta"] = (dias["faltas"] > 0).astype(int)
+    g = dias.groupby("patient_id")["dia_falta"]
+    for n in (3, 5):  # janela dos n dias de consulta anteriores
+        dias[f"faltas_ult{n}"] = g.transform(lambda s: s.shift().rolling(n, min_periods=1).sum())
+    # sequência terminada no dia anterior: comprimento da série de dias de falta consecutivos
+    bloco = (dias["dia_falta"] == 0).groupby(dias["patient_id"]).cumsum()
+    seq = dias.groupby([dias["patient_id"], bloco])["dia_falta"].cumsum()
+    dias["faltas_seguidas"] = seq.groupby(dias["patient_id"]).shift()
+
+    janela = (dias.set_index("appointment_date").groupby("patient_id")[["consultas", "faltas"]]
+              .rolling("90D", closed="left").sum().reset_index())
+    dias = dias.merge(janela.rename(columns={"consultas": "c90", "faltas": "f90"}),
+                      on=["patient_id", "appointment_date"], how="left")
+    dias["taxa_faltas_90d"] = (dias["f90"] / dias["c90"]).where(dias["c90"] > 0)
+
+    cols = ["faltas_ult3", "faltas_ult5", "faltas_seguidas", "taxa_faltas_90d"]
+    df = df.drop(columns=cols, errors="ignore").merge(
+        dias[["patient_id", "appointment_date"] + cols], on=["patient_id", "appointment_date"], how="left")
+
+    esp = (df[known].groupby(["patient_id", "specialty_grp", "appointment_date"])[TARGET]
+           .agg(c="size", f="sum").reset_index().sort_values(["patient_id", "specialty_grp", "appointment_date"]))
+    ge = esp.groupby(["patient_id", "specialty_grp"])
+    c_ant, f_ant = ge["c"].cumsum() - esp["c"], ge["f"].cumsum() - esp["f"]
+    esp["taxa_faltas_especialidade"] = (f_ant / c_ant).where(c_ant > 0)
+    df = df.drop(columns=["taxa_faltas_especialidade"], errors="ignore").merge(
+        esp[["patient_id", "specialty_grp", "appointment_date", "taxa_faltas_especialidade"]],
+        on=["patient_id", "specialty_grp", "appointment_date"], how="left")
+
+    # ordem da consulta no dia do paciente (conhecida no agendamento)
+    df["ordem_no_dia"] = (df[known].groupby(["patient_id", "appointment_date"])["appointment_time"]
+                          .rank(method="dense")).reindex(df.index)
+    return df
+
+
+def build_features(df: pd.DataFrame | None = None, relaxed_id: bool = False) -> pd.DataFrame:
+    """Base completa: carga, correção do clima, ID aproximado e todas as variáveis de FEATURES_V2.
+
+    `relaxed_id=False` reproduz a base dos notebooks 02–04; `True` usa a ligação aproximada de pacientes.
+    """
+    df = add_patient_proxy(fix_weather(load_raw()), relaxed=relaxed_id) if df is None else df
     df = add_age(df)
     df = add_calendar(df)
     df = group_categories(df)
     df = add_service_time(df)
     df = add_patient_history(df)
+    df = add_recent_history(df)
     return df
 
 
