@@ -31,3 +31,22 @@ def test_bootstrap_pareado_detecta_modelo_melhor():
     boot = grouped_bootstrap(y, {"bom": bom, "ruim": ruim}, groups, n_boot=200)
     d = paired_difference(boot, "bom", "ruim")
     assert d["ic_inf"] > 0 and d["p"] < 0.01
+
+
+def test_prior_shift_preserva_ordem_e_ajusta_nivel():
+    from noshow.benchmark import prior_shift
+    p = np.array([0.02, 0.05, 0.1, 0.3, 0.8])
+    assert np.allclose(prior_shift(p, 0.1, 0.1), p)                    # mesma prevalência: identidade
+    q = prior_shift(p, 0.1, 0.2)
+    assert (np.diff(q) > 0).all() and (q > p).all()                    # ordem preservada, risco maior
+    assert prior_shift(np.array([0.1]), 0.1, 0.2)[0] == pytest.approx(0.2)  # o risco médio vai para a nova taxa
+
+
+def test_taxa_recente_usa_janela_e_minimo():
+    from noshow.benchmark import recent_rate
+    datas = pd.Series(pd.to_datetime(["2019-01-15", "2019-06-15", "2019-08-15", "2019-09-15", "2019-10-15"]))
+    y = np.array([1, 1, 0, 1, 1])
+    conhecidos = np.arange(5)
+    inicio = pd.Timestamp("2019-10-01")                                # 2019-10-15 é futuro e fica fora
+    assert recent_rate(datas, y, conhecidos, inicio, meses=3, minimo=1) == pytest.approx(0.5)   # ago e set
+    assert recent_rate(datas, y, conhecidos, inicio, meses=3, minimo=3) == pytest.approx(2 / 3)  # estende até jun
