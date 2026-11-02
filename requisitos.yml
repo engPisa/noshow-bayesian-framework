@@ -426,7 +426,7 @@ issues:
         verificacao: [tests::test_rastreabilidade_valida_a_fonte_unica]
   28:
     titulo: Cenário com ID como proxy de produção
-    pr: null
+    pr: 31
     cenarios: {1: [RF-064, RF-065]}
     requisitos:
       - id: RF-064
@@ -443,7 +443,7 @@ issues:
         verificacao: [revisão do notebook]
   29:
     titulo: Premissa da retroalimentação medida
-    pr: null
+    pr: 31
     cenarios: {1: [RF-067]}
     requisitos:
       - id: RF-067
@@ -464,7 +464,7 @@ issues:
         verificacao: [revisão do notebook]
   30:
     titulo: Ligação de pacientes pela agenda (resultado negativo documentado)
-    pr: null
+    pr: 31
     cenarios: {1: [RF-071]}
     requisitos:
       - id: RF-070
