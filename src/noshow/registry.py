@@ -1,7 +1,8 @@
 """Registro de experimentos 70/30. Cada versão vira um notebook `notebooks/05_experimento_vN.ipynb`.
 
 Para um novo experimento: acrescente uma entrada em EXPERIMENTOS (descrição, o que mudou, base e variáveis)
-e crie o notebook da versão a partir do anterior. Os resultados ficam em `resultados/experimentos/vN/`.
+e crie o notebook da versão a partir do anterior. `compara_com` indica a versão-base quando ela não é a
+imediatamente anterior (ex.: a v6 é construída sobre a v4). Os resultados ficam em `resultados/experimentos/vN/`.
 """
 
 import json
@@ -13,11 +14,12 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import average_precision_score, brier_score_loss, roc_auc_score
 
-from noshow.benchmark import (fit_lightgbm, fit_logistic, group_holdout, inner_splits, logistic_model,
-                              temporal_holdout, to_lgbm)
+from noshow.benchmark import (fit_lightgbm, fit_logistic, group_holdout, inner_splits, logistic_model, prior_shift,
+                              recent_rate, temporal_holdout, to_lgbm)
 from noshow.evaluation import patient_groups
 from noshow.experiments import fit_predict
-from noshow.features import CATEGORICAL, CATEGORICAL_V2, CONTINUOUS, CONTINUOUS_V2, FEATURES_V3, build_features
+from noshow.features import (CATEGORICAL, CATEGORICAL_V2, CATEGORICAL_V3, CONTINUOUS, CONTINUOUS_V2, CONTINUOUS_V3,
+                             FEATURES_V3, build_features)
 
 RAIZ = Path(__file__).resolve().parents[2]
 PROCESSED = RAIZ / "data" / "processed"
@@ -57,6 +59,30 @@ EXPERIMENTOS = {
                    "continuam calculadas com todo o passado dele; a janela limita apenas as linhas de treino.",
         "base": "aproximado", "categoricas": CATEGORICAL_V2, "continuas": CONTINUOUS_V2,
         "recalibracao": "trimestral", "janela_meses": 12,
+    },
+    "v6": {
+        "titulo": "Ajuste do nível de risco (deslocamento da priori)",
+        "mudanca": "Igual à v4 (recalibração trimestral, janela expansiva), mas em cada retreino as probabilidades são "
+                   "corrigidas para a taxa de faltas dos últimos 6 meses conhecidos (correção de Saerens; mínimo de "
+                   "500 registros). A correção é monotônica: muda o nível de risco, não a ordenação no trimestre.",
+        "base": "aproximado", "categoricas": CATEGORICAL_V2, "continuas": CONTINUOUS_V2,
+        "recalibracao": "trimestral", "ajuste_nivel": {"meses": 6, "minimo": 500},
+        "compara_com": "v4",  # construída sobre a v4; a v5 (janela de 12 meses) foi descartada
+    },
+    "v7": {
+        "titulo": "Histórico suavizado, recência e partida a frio",
+        "mudanca": "Igual à v6, com 5 variáveis novas: taxa de faltas suavizada (Beta-Binomial, priori causal), taxa "
+                   "ponderada pela recência (meia-vida de 90 dias), indicador de primeira consulta e taxas da "
+                   "população por especialidade e por cidade (só dias anteriores).",
+        "base": "aproximado", "categoricas": CATEGORICAL_V3, "continuas": CONTINUOUS_V3,
+        "recalibracao": "trimestral", "ajuste_nivel": {"meses": 6, "minimo": 500},
+    },
+    "v8": {
+        "titulo": "Rótulo limpo (sem cancelamentos avisados no treino)",
+        "mudanca": "Igual à v7, mas os no-shows cujo motivo indica cancelamento ou aviso (`falta_avisada`, 5,4% das "
+                   "faltas) saem do treino. O teste mantém o rótulo original, para comparar com a v7.",
+        "base": "aproximado", "categoricas": CATEGORICAL_V3, "continuas": CONTINUOUS_V3,
+        "recalibracao": "trimestral", "ajuste_nivel": {"meses": 6, "minimo": 500}, "rotulo_limpo": True,
     },
 }
 MODELOS = ["RB (BIC)", "RB (AIC)", "Regressão logística", "LightGBM"]
@@ -141,19 +167,26 @@ def recalibration_blocks(dates: pd.Series, tr: np.ndarray, te: np.ndarray, freq:
         yield q, conhecidos, np.where(periodos == q)[0]
 
 
-def _fit_recalibrado(base, X, y, tr, te, cat, cont, internas, n_trials, verbose, janela_meses=None):
+def _fit_recalibrado(base, X, y, tr, te, cat, cont, internas, n_trials, verbose, janela_meses=None,
+                     ajuste_nivel=None, valido=None):
     """Retreina a cada trimestre do teste com o treino + os desfechos dos trimestres anteriores."""
     preds = {m: np.empty(len(te)) for m in MODELOS}
     info_final, mantos = {}, []
     # hiperparâmetros escolhidos uma vez, com o treino original; os retreinos só reajustam os modelos
     fixos = _tune(X.iloc[tr], y[tr], cat, cont, internas, n_trials)
     for q, tr_q, pos in recalibration_blocks(base.appointment_date, tr, te, janela_meses=janela_meses):
+        if valido is not None:  # rótulo limpo: registros conhecidos inválidos também saem do retreino
+            tr_q = tr_q[valido[tr_q]]
         res, _ = _fit_models(X.iloc[tr_q], y[tr_q], X.iloc[te[pos]], cat, cont, None, n_trials, fixos)
+        nivel = {}
+        if ajuste_nivel:
+            nivel = {"prev_treino": float(y[tr_q].mean()),
+                     "prev_recente": recent_rate(base.appointment_date, y, tr_q, q.start_time, **ajuste_nivel)}
         for m, (p, info) in res.items():
-            preds[m][pos] = p
+            preds[m][pos] = prior_shift(p, nivel["prev_treino"], nivel["prev_recente"]) if nivel else p
             info_final[m] = info
         mantos.append({"trimestre": str(q), "n_treino": len(tr_q), "faltas_treino": int(y[tr_q].sum()),
-                       "n_teste": len(pos),
+                       "n_teste": len(pos), **nivel,
                        **{m: res[m][1]["manto"] for m in MODELOS if m.startswith("RB")}})
         if verbose:
             print(f"  recalibração {q}: treino {len(tr_q):,} | teste {len(pos):,}", flush=True)
@@ -174,7 +207,11 @@ def run(versao: str, n_trials: int = 30, verbose: bool = True) -> tuple[pd.DataF
     grupos = patient_groups(bases["aproximado"].patient_id)
 
     metricas, predicoes, params, t0 = [], [], {}, time.time()
+    # rótulo limpo (v8): no-shows avisados saem do treino; o teste mantém o rótulo original
+    valido = (base.falta_avisada == 0).to_numpy() if cfg.get("rotulo_limpo") else None
     for divisao, (tr, te) in splits(bases).items():
+        if valido is not None:
+            tr = tr[valido[tr]]
         cat = [c for c in cfg["categoricas"] if not (divisao == "temporal" and c == "periodo")]  # constante no treino
         cont = cfg["continuas"]
         X = base[cat + cont]
@@ -183,7 +220,8 @@ def run(versao: str, n_trials: int = 30, verbose: bool = True) -> tuple[pd.DataF
                                 "temporal" if divisao == "temporal" else "grupo")
         if divisao == "temporal" and cfg.get("recalibracao") == "trimestral":
             res = _fit_recalibrado(base, X, y, tr, te, cat, cont, internas, n_trials, verbose,
-                                   janela_meses=cfg.get("janela_meses"))
+                                   janela_meses=cfg.get("janela_meses"), ajuste_nivel=cfg.get("ajuste_nivel"),
+                                   valido=valido)
         else:
             res, _ = _fit_models(Xtr, ytr, Xte, cat, cont, internas, n_trials)
 
