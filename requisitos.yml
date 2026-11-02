@@ -304,7 +304,7 @@ issues:
         verificacao: [revisão do README]
   21:
     titulo: Gerar as bases de variáveis pelo código do projeto
-    pr: null
+    pr: 27
     requisitos:
       - id: CA-005
         texto: As bases são geradas por código versionado
@@ -320,7 +320,7 @@ issues:
         verificacao: [execução dos notebooks 05 sem bases prévias]
   22:
     titulo: Experimento v6 — ajuste do nível de risco
-    pr: null
+    pr: 27
     cenarios: {1: [RF-049], 2: [RF-049, RF-051]}
     requisitos:
       - id: RF-049
@@ -343,7 +343,7 @@ issues:
         verificacao: [execução completa do notebook]
   23:
     titulo: Experimento v7 — histórico suavizado, partida a frio e recência
-    pr: null
+    pr: 27
     cenarios: {1: [RF-055, RF-056], 2: [RF-053]}
     requisitos:
       - id: RF-053
@@ -368,7 +368,7 @@ issues:
         verificacao: [CI (pytest)]
   24:
     titulo: Experimento v8 — rótulo limpo
-    pr: null
+    pr: 27
     cenarios: {1: [RF-057, RF-058]}
     requisitos:
       - id: RF-057
@@ -385,7 +385,7 @@ issues:
         verificacao: [notebook 05_experimento_v8 §3 (comparação pareada com a v7)]
   25:
     titulo: Avaliação operacional com várias origens no tempo
-    pr: null
+    pr: 27
     cenarios: {1: [RF-060, RF-061]}
     requisitos:
       - id: RF-060
@@ -406,7 +406,7 @@ issues:
         verificacao: [tests::test_auc_por_subgrupo]
   26:
     titulo: Rastreabilidade global dos requisitos
-    pr: null
+    pr: 27
     requisitos:
       - id: CA-008
         texto: "Numeração global única: `RF-NNN` (funcional), `RNF-NNN` (não funcional) e `CA-NNN` (critério de tarefa técnica)"
