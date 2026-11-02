@@ -83,3 +83,33 @@ def run_origins(bases: dict[str, pd.DataFrame], configs: dict, origens: list[str
             print(f"origem {origem.date()}: treino {len(tr0):,} | teste {len(te):,} ({time.time() - t0:.0f}s)",
                   flush=True)
     return pd.DataFrame(metricas), pd.concat(predicoes, ignore_index=True)
+
+
+def auc_by_origin(s: pd.DataFrame, grupos: pd.Series | None = None, minimo: int = 100) -> pd.DataFrame:
+    """ROC-AUC calculada dentro de cada origem e combinada pela média ponderada pelo tamanho.
+
+    `s` tem as colunas `origem`, `y` e `p`. Com `grupos` (alinhado a `s`), o cálculo é feito por grupo. Em cada
+    origem, grupos com menos de `minimo` registros ou sem as duas classes ficam de fora da média da AUC.
+    Comparar dentro da origem é o que o serviço faz: ele nunca ordena pacientes de períodos diferentes juntos.
+    """
+    s = s.reset_index(drop=True).assign(_g=(grupos.to_numpy() if grupos is not None else "todos"))
+    linhas = []
+    for (g, _), d in s.groupby(["_g", "origem"]):
+        ok = len(d) >= minimo and d.y.nunique() == 2
+        linhas.append({"grupo": g, "n": len(d), "taxa": d.y.mean(), "auc": roc_auc_score(d.y, d.p) if ok else np.nan})
+    t = pd.DataFrame(linhas)
+
+    def combina(d):
+        v = d.auc.notna()
+        return pd.Series({"n": d.n.sum(), "taxa": np.average(d.taxa, weights=d.n),
+                          "roc_auc": np.average(d.auc[v], weights=d.n[v]) if v.any() else np.nan,
+                          "origens": int(v.sum())})
+    return t.groupby("grupo").apply(combina)
+
+
+def decision_by_origin(s: pd.DataFrame, volumes=VOLUMES) -> pd.DataFrame:
+    """`decision_table` em cada origem (alertas dentro do período) e média ponderada pelo tamanho do teste."""
+    partes = [decision_table(d.y.to_numpy(), d.p.to_numpy(), volumes).assign(n=len(d)) for _, d in s.groupby("origem")]
+    t = pd.concat(partes)
+    cols = [c for c in t.columns if c not in ("volume", "n")]
+    return t.groupby("volume").apply(lambda g: pd.Series(np.average(g[cols], axis=0, weights=g.n), cols))
