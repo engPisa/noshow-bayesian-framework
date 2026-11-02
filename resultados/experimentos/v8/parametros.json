@@ -1,0 +1,553 @@
+{
+ "config": {
+  "titulo": "Rótulo limpo (sem cancelamentos avisados no treino)",
+  "mudanca": "Igual à v7, mas os no-shows cujo motivo indica cancelamento ou aviso (`falta_avisada`, 5,4% das faltas) saem do treino. O teste mantém o rótulo original, para comparar com a v7.",
+  "base": "aproximado",
+  "categoricas": [
+   "faixa_etaria",
+   "gender",
+   "disability",
+   "city_grp",
+   "cid_capitulo",
+   "cadastro_ausente",
+   "specialty_grp",
+   "patient_needs_companion",
+   "heat_intensity",
+   "rain_intensity",
+   "dia_semana",
+   "faixa_horaria",
+   "mes",
+   "estacao",
+   "periodo",
+   "faltou_ultima",
+   "perto_feriado",
+   "id_qualidade",
+   "primeira_consulta"
+  ],
+  "continuas": [
+   "idade_consulta",
+   "consultas_no_dia",
+   "max_temp_day",
+   "max_rain_day",
+   "dias_em_servico",
+   "n_agendamentos_anteriores",
+   "n_faltas_anteriores",
+   "taxa_faltas_anteriores",
+   "dias_desde_ultima_consulta",
+   "faltas_ult3",
+   "faltas_ult5",
+   "faltas_seguidas",
+   "taxa_faltas_90d",
+   "taxa_faltas_especialidade",
+   "ordem_no_dia",
+   "taxa_faltas_suavizada",
+   "taxa_faltas_recencia",
+   "taxa_populacao_especialidade",
+   "taxa_populacao_cidade"
+  ],
+  "recalibracao": "trimestral",
+  "ajuste_nivel": {
+   "meses": 6,
+   "minimo": 500
+  },
+  "rotulo_limpo": true
+ },
+ "modelos": {
+  "agrupada|RB (BIC)": {
+   "manto": "periodo, taxa_faltas_suavizada",
+   "n_params": 25
+  },
+  "agrupada|RB (AIC)": {
+   "manto": "mes, periodo, taxa_faltas_suavizada",
+   "n_params": 311
+  },
+  "agrupada|Regressão logística": {
+   "C": 0.01,
+   "auc_interna": 0.6557362966138074
+  },
+  "agrupada|LightGBM": {
+   "n_estimators": 500,
+   "learning_rate": 0.012022370540704454,
+   "num_leaves": 57,
+   "min_child_samples": 248,
+   "colsample_bytree": 0.508097027106823,
+   "reg_lambda": 22.79295151130861,
+   "cat_smooth": 53.89439142340677,
+   "auc_interna": 0.6778854795903319
+  },
+  "temporal|RB (BIC)": {
+   "manto": "taxa_faltas_suavizada",
+   "n_params": 11,
+   "recalibracoes": 11,
+   "mantos_por_trimestre": [
+    {
+     "trimestre": "2019Q3",
+     "n_treino": 34544,
+     "faltas_treino": 2575,
+     "n_teste": 1236,
+     "prev_treino": 0.07454261232051876,
+     "prev_recente": 0.1457251644167532,
+     "RB (BIC)": "taxa_faltas_recencia",
+     "RB (AIC)": "idade_consulta, mes, taxa_faltas_recencia"
+    },
+    {
+     "trimestre": "2019Q4",
+     "n_treino": 35780,
+     "faltas_treino": 2701,
+     "n_teste": 2795,
+     "prev_treino": 0.07548910005589715,
+     "prev_recente": 0.11522727272727273,
+     "RB (BIC)": "taxa_faltas_90d",
+     "RB (AIC)": "idade_consulta, mes, taxa_faltas_recencia"
+    },
+    {
+     "trimestre": "2020Q1",
+     "n_treino": 38575,
+     "faltas_treino": 3019,
+     "n_teste": 156,
+     "prev_treino": 0.07826312378483474,
+     "prev_recente": 0.11150131694468832,
+     "RB (BIC)": "taxa_faltas_recencia",
+     "RB (AIC)": "idade_consulta, mes, taxa_faltas_recencia"
+    },
+    {
+     "trimestre": "2020Q2",
+     "n_treino": 38729,
+     "faltas_treino": 3047,
+     "n_teste": 30,
+     "prev_treino": 0.07867489478168814,
+     "prev_recente": 0.11732790776534419,
+     "RB (BIC)": "taxa_faltas_recencia",
+     "RB (AIC)": "idade_consulta, mes, taxa_faltas_recencia"
+    },
+    {
+     "trimestre": "2020Q3",
+     "n_treino": 38759,
+     "faltas_treino": 3061,
+     "n_teste": 331,
+     "prev_treino": 0.0789752057586625,
+     "prev_recente": 0.164,
+     "RB (BIC)": "taxa_faltas_90d",
+     "RB (AIC)": "idade_consulta, mes, taxa_faltas_recencia"
+    },
+    {
+     "trimestre": "2020Q4",
+     "n_treino": 39090,
+     "faltas_treino": 3109,
+     "n_teste": 387,
+     "prev_treino": 0.07953440777692504,
+     "prev_recente": 0.168,
+     "RB (BIC)": "taxa_faltas_recencia",
+     "RB (AIC)": "idade_consulta, mes, taxa_faltas_recencia"
+    },
+    {
+     "trimestre": "2021Q1",
+     "n_treino": 39477,
+     "faltas_treino": 3143,
+     "n_teste": 1366,
+     "prev_treino": 0.07961597892443702,
+     "prev_recente": 0.11420612813370473,
+     "RB (BIC)": "taxa_faltas_recencia",
+     "RB (AIC)": "idade_consulta, mes, taxa_faltas_recencia"
+    },
+    {
+     "trimestre": "2021Q2",
+     "n_treino": 40843,
+     "faltas_treino": 3311,
+     "n_teste": 2819,
+     "prev_treino": 0.08106652302720173,
+     "prev_recente": 0.11523103251568739,
+     "RB (BIC)": "taxa_faltas_suavizada",
+     "RB (AIC)": "mes, taxa_faltas_suavizada"
+    },
+    {
+     "trimestre": "2021Q3",
+     "n_treino": 43576,
+     "faltas_treino": 3716,
+     "n_teste": 3058,
+     "prev_treino": 0.0852762988801175,
+     "prev_recente": 0.13979019272993412,
+     "RB (BIC)": "faltas_ult3, taxa_populacao_especialidade",
+     "RB (AIC)": "faltas_seguidas, mes, taxa_populacao_especialidade"
+    },
+    {
+     "trimestre": "2021Q4",
+     "n_treino": 46633,
+     "faltas_treino": 4144,
+     "n_teste": 1765,
+     "prev_treino": 0.08886410910728454,
+     "prev_recente": 0.14386873920552676,
+     "RB (BIC)": "taxa_faltas_suavizada",
+     "RB (AIC)": "mes, taxa_faltas_suavizada, taxa_populacao_especialidade"
+    },
+    {
+     "trimestre": "2022Q1",
+     "n_treino": 48391,
+     "faltas_treino": 4410,
+     "n_teste": 942,
+     "prev_treino": 0.09113264863301027,
+     "prev_recente": 0.14413291796469366,
+     "RB (BIC)": "taxa_faltas_suavizada",
+     "RB (AIC)": "mes, taxa_faltas_suavizada, taxa_populacao_especialidade"
+    }
+   ]
+  },
+  "temporal|RB (AIC)": {
+   "manto": "mes, taxa_faltas_suavizada, taxa_populacao_especialidade",
+   "n_params": 508,
+   "recalibracoes": 11,
+   "mantos_por_trimestre": [
+    {
+     "trimestre": "2019Q3",
+     "n_treino": 34544,
+     "faltas_treino": 2575,
+     "n_teste": 1236,
+     "prev_treino": 0.07454261232051876,
+     "prev_recente": 0.1457251644167532,
+     "RB (BIC)": "taxa_faltas_recencia",
+     "RB (AIC)": "idade_consulta, mes, taxa_faltas_recencia"
+    },
+    {
+     "trimestre": "2019Q4",
+     "n_treino": 35780,
+     "faltas_treino": 2701,
+     "n_teste": 2795,
+     "prev_treino": 0.07548910005589715,
+     "prev_recente": 0.11522727272727273,
+     "RB (BIC)": "taxa_faltas_90d",
+     "RB (AIC)": "idade_consulta, mes, taxa_faltas_recencia"
+    },
+    {
+     "trimestre": "2020Q1",
+     "n_treino": 38575,
+     "faltas_treino": 3019,
+     "n_teste": 156,
+     "prev_treino": 0.07826312378483474,
+     "prev_recente": 0.11150131694468832,
+     "RB (BIC)": "taxa_faltas_recencia",
+     "RB (AIC)": "idade_consulta, mes, taxa_faltas_recencia"
+    },
+    {
+     "trimestre": "2020Q2",
+     "n_treino": 38729,
+     "faltas_treino": 3047,
+     "n_teste": 30,
+     "prev_treino": 0.07867489478168814,
+     "prev_recente": 0.11732790776534419,
+     "RB (BIC)": "taxa_faltas_recencia",
+     "RB (AIC)": "idade_consulta, mes, taxa_faltas_recencia"
+    },
+    {
+     "trimestre": "2020Q3",
+     "n_treino": 38759,
+     "faltas_treino": 3061,
+     "n_teste": 331,
+     "prev_treino": 0.0789752057586625,
+     "prev_recente": 0.164,
+     "RB (BIC)": "taxa_faltas_90d",
+     "RB (AIC)": "idade_consulta, mes, taxa_faltas_recencia"
+    },
+    {
+     "trimestre": "2020Q4",
+     "n_treino": 39090,
+     "faltas_treino": 3109,
+     "n_teste": 387,
+     "prev_treino": 0.07953440777692504,
+     "prev_recente": 0.168,
+     "RB (BIC)": "taxa_faltas_recencia",
+     "RB (AIC)": "idade_consulta, mes, taxa_faltas_recencia"
+    },
+    {
+     "trimestre": "2021Q1",
+     "n_treino": 39477,
+     "faltas_treino": 3143,
+     "n_teste": 1366,
+     "prev_treino": 0.07961597892443702,
+     "prev_recente": 0.11420612813370473,
+     "RB (BIC)": "taxa_faltas_recencia",
+     "RB (AIC)": "idade_consulta, mes, taxa_faltas_recencia"
+    },
+    {
+     "trimestre": "2021Q2",
+     "n_treino": 40843,
+     "faltas_treino": 3311,
+     "n_teste": 2819,
+     "prev_treino": 0.08106652302720173,
+     "prev_recente": 0.11523103251568739,
+     "RB (BIC)": "taxa_faltas_suavizada",
+     "RB (AIC)": "mes, taxa_faltas_suavizada"
+    },
+    {
+     "trimestre": "2021Q3",
+     "n_treino": 43576,
+     "faltas_treino": 3716,
+     "n_teste": 3058,
+     "prev_treino": 0.0852762988801175,
+     "prev_recente": 0.13979019272993412,
+     "RB (BIC)": "faltas_ult3, taxa_populacao_especialidade",
+     "RB (AIC)": "faltas_seguidas, mes, taxa_populacao_especialidade"
+    },
+    {
+     "trimestre": "2021Q4",
+     "n_treino": 46633,
+     "faltas_treino": 4144,
+     "n_teste": 1765,
+     "prev_treino": 0.08886410910728454,
+     "prev_recente": 0.14386873920552676,
+     "RB (BIC)": "taxa_faltas_suavizada",
+     "RB (AIC)": "mes, taxa_faltas_suavizada, taxa_populacao_especialidade"
+    },
+    {
+     "trimestre": "2022Q1",
+     "n_treino": 48391,
+     "faltas_treino": 4410,
+     "n_teste": 942,
+     "prev_treino": 0.09113264863301027,
+     "prev_recente": 0.14413291796469366,
+     "RB (BIC)": "taxa_faltas_suavizada",
+     "RB (AIC)": "mes, taxa_faltas_suavizada, taxa_populacao_especialidade"
+    }
+   ]
+  },
+  "temporal|Regressão logística": {
+   "C": 0.003,
+   "auc_interna": 0.5811746400564292,
+   "recalibracoes": 11,
+   "mantos_por_trimestre": [
+    {
+     "trimestre": "2019Q3",
+     "n_treino": 34544,
+     "faltas_treino": 2575,
+     "n_teste": 1236,
+     "prev_treino": 0.07454261232051876,
+     "prev_recente": 0.1457251644167532,
+     "RB (BIC)": "taxa_faltas_recencia",
+     "RB (AIC)": "idade_consulta, mes, taxa_faltas_recencia"
+    },
+    {
+     "trimestre": "2019Q4",
+     "n_treino": 35780,
+     "faltas_treino": 2701,
+     "n_teste": 2795,
+     "prev_treino": 0.07548910005589715,
+     "prev_recente": 0.11522727272727273,
+     "RB (BIC)": "taxa_faltas_90d",
+     "RB (AIC)": "idade_consulta, mes, taxa_faltas_recencia"
+    },
+    {
+     "trimestre": "2020Q1",
+     "n_treino": 38575,
+     "faltas_treino": 3019,
+     "n_teste": 156,
+     "prev_treino": 0.07826312378483474,
+     "prev_recente": 0.11150131694468832,
+     "RB (BIC)": "taxa_faltas_recencia",
+     "RB (AIC)": "idade_consulta, mes, taxa_faltas_recencia"
+    },
+    {
+     "trimestre": "2020Q2",
+     "n_treino": 38729,
+     "faltas_treino": 3047,
+     "n_teste": 30,
+     "prev_treino": 0.07867489478168814,
+     "prev_recente": 0.11732790776534419,
+     "RB (BIC)": "taxa_faltas_recencia",
+     "RB (AIC)": "idade_consulta, mes, taxa_faltas_recencia"
+    },
+    {
+     "trimestre": "2020Q3",
+     "n_treino": 38759,
+     "faltas_treino": 3061,
+     "n_teste": 331,
+     "prev_treino": 0.0789752057586625,
+     "prev_recente": 0.164,
+     "RB (BIC)": "taxa_faltas_90d",
+     "RB (AIC)": "idade_consulta, mes, taxa_faltas_recencia"
+    },
+    {
+     "trimestre": "2020Q4",
+     "n_treino": 39090,
+     "faltas_treino": 3109,
+     "n_teste": 387,
+     "prev_treino": 0.07953440777692504,
+     "prev_recente": 0.168,
+     "RB (BIC)": "taxa_faltas_recencia",
+     "RB (AIC)": "idade_consulta, mes, taxa_faltas_recencia"
+    },
+    {
+     "trimestre": "2021Q1",
+     "n_treino": 39477,
+     "faltas_treino": 3143,
+     "n_teste": 1366,
+     "prev_treino": 0.07961597892443702,
+     "prev_recente": 0.11420612813370473,
+     "RB (BIC)": "taxa_faltas_recencia",
+     "RB (AIC)": "idade_consulta, mes, taxa_faltas_recencia"
+    },
+    {
+     "trimestre": "2021Q2",
+     "n_treino": 40843,
+     "faltas_treino": 3311,
+     "n_teste": 2819,
+     "prev_treino": 0.08106652302720173,
+     "prev_recente": 0.11523103251568739,
+     "RB (BIC)": "taxa_faltas_suavizada",
+     "RB (AIC)": "mes, taxa_faltas_suavizada"
+    },
+    {
+     "trimestre": "2021Q3",
+     "n_treino": 43576,
+     "faltas_treino": 3716,
+     "n_teste": 3058,
+     "prev_treino": 0.0852762988801175,
+     "prev_recente": 0.13979019272993412,
+     "RB (BIC)": "faltas_ult3, taxa_populacao_especialidade",
+     "RB (AIC)": "faltas_seguidas, mes, taxa_populacao_especialidade"
+    },
+    {
+     "trimestre": "2021Q4",
+     "n_treino": 46633,
+     "faltas_treino": 4144,
+     "n_teste": 1765,
+     "prev_treino": 0.08886410910728454,
+     "prev_recente": 0.14386873920552676,
+     "RB (BIC)": "taxa_faltas_suavizada",
+     "RB (AIC)": "mes, taxa_faltas_suavizada, taxa_populacao_especialidade"
+    },
+    {
+     "trimestre": "2022Q1",
+     "n_treino": 48391,
+     "faltas_treino": 4410,
+     "n_teste": 942,
+     "prev_treino": 0.09113264863301027,
+     "prev_recente": 0.14413291796469366,
+     "RB (BIC)": "taxa_faltas_suavizada",
+     "RB (AIC)": "mes, taxa_faltas_suavizada, taxa_populacao_especialidade"
+    }
+   ]
+  },
+  "temporal|LightGBM": {
+   "n_estimators": 200,
+   "learning_rate": 0.010791162431504756,
+   "num_leaves": 12,
+   "min_child_samples": 46,
+   "colsample_bytree": 0.5899797844246222,
+   "reg_lambda": 0.6927606180033848,
+   "cat_smooth": 18.318860480102426,
+   "auc_interna": 0.5669104324855123,
+   "recalibracoes": 11,
+   "mantos_por_trimestre": [
+    {
+     "trimestre": "2019Q3",
+     "n_treino": 34544,
+     "faltas_treino": 2575,
+     "n_teste": 1236,
+     "prev_treino": 0.07454261232051876,
+     "prev_recente": 0.1457251644167532,
+     "RB (BIC)": "taxa_faltas_recencia",
+     "RB (AIC)": "idade_consulta, mes, taxa_faltas_recencia"
+    },
+    {
+     "trimestre": "2019Q4",
+     "n_treino": 35780,
+     "faltas_treino": 2701,
+     "n_teste": 2795,
+     "prev_treino": 0.07548910005589715,
+     "prev_recente": 0.11522727272727273,
+     "RB (BIC)": "taxa_faltas_90d",
+     "RB (AIC)": "idade_consulta, mes, taxa_faltas_recencia"
+    },
+    {
+     "trimestre": "2020Q1",
+     "n_treino": 38575,
+     "faltas_treino": 3019,
+     "n_teste": 156,
+     "prev_treino": 0.07826312378483474,
+     "prev_recente": 0.11150131694468832,
+     "RB (BIC)": "taxa_faltas_recencia",
+     "RB (AIC)": "idade_consulta, mes, taxa_faltas_recencia"
+    },
+    {
+     "trimestre": "2020Q2",
+     "n_treino": 38729,
+     "faltas_treino": 3047,
+     "n_teste": 30,
+     "prev_treino": 0.07867489478168814,
+     "prev_recente": 0.11732790776534419,
+     "RB (BIC)": "taxa_faltas_recencia",
+     "RB (AIC)": "idade_consulta, mes, taxa_faltas_recencia"
+    },
+    {
+     "trimestre": "2020Q3",
+     "n_treino": 38759,
+     "faltas_treino": 3061,
+     "n_teste": 331,
+     "prev_treino": 0.0789752057586625,
+     "prev_recente": 0.164,
+     "RB (BIC)": "taxa_faltas_90d",
+     "RB (AIC)": "idade_consulta, mes, taxa_faltas_recencia"
+    },
+    {
+     "trimestre": "2020Q4",
+     "n_treino": 39090,
+     "faltas_treino": 3109,
+     "n_teste": 387,
+     "prev_treino": 0.07953440777692504,
+     "prev_recente": 0.168,
+     "RB (BIC)": "taxa_faltas_recencia",
+     "RB (AIC)": "idade_consulta, mes, taxa_faltas_recencia"
+    },
+    {
+     "trimestre": "2021Q1",
+     "n_treino": 39477,
+     "faltas_treino": 3143,
+     "n_teste": 1366,
+     "prev_treino": 0.07961597892443702,
+     "prev_recente": 0.11420612813370473,
+     "RB (BIC)": "taxa_faltas_recencia",
+     "RB (AIC)": "idade_consulta, mes, taxa_faltas_recencia"
+    },
+    {
+     "trimestre": "2021Q2",
+     "n_treino": 40843,
+     "faltas_treino": 3311,
+     "n_teste": 2819,
+     "prev_treino": 0.08106652302720173,
+     "prev_recente": 0.11523103251568739,
+     "RB (BIC)": "taxa_faltas_suavizada",
+     "RB (AIC)": "mes, taxa_faltas_suavizada"
+    },
+    {
+     "trimestre": "2021Q3",
+     "n_treino": 43576,
+     "faltas_treino": 3716,
+     "n_teste": 3058,
+     "prev_treino": 0.0852762988801175,
+     "prev_recente": 0.13979019272993412,
+     "RB (BIC)": "faltas_ult3, taxa_populacao_especialidade",
+     "RB (AIC)": "faltas_seguidas, mes, taxa_populacao_especialidade"
+    },
+    {
+     "trimestre": "2021Q4",
+     "n_treino": 46633,
+     "faltas_treino": 4144,
+     "n_teste": 1765,
+     "prev_treino": 0.08886410910728454,
+     "prev_recente": 0.14386873920552676,
+     "RB (BIC)": "taxa_faltas_suavizada",
+     "RB (AIC)": "mes, taxa_faltas_suavizada, taxa_populacao_especialidade"
+    },
+    {
+     "trimestre": "2022Q1",
+     "n_treino": 48391,
+     "faltas_treino": 4410,
+     "n_teste": 942,
+     "prev_treino": 0.09113264863301027,
+     "prev_recente": 0.14413291796469366,
+     "RB (BIC)": "taxa_faltas_suavizada",
+     "RB (AIC)": "mes, taxa_faltas_suavizada, taxa_populacao_especialidade"
+    }
+   ]
+  }
+ }
+}
