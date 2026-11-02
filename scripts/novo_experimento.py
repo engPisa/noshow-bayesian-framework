@@ -22,7 +22,7 @@ conclusao = registro.read_text() if registro.exists() else (
     f"> _Registro pendente: escrever a análise em `resultados/experimentos/{versao}/registro.md`._")
 cfg = EXPERIMENTOS[versao]
 versoes = list(EXPERIMENTOS)
-anterior = versoes[versoes.index(versao) - 1] if versoes.index(versao) > 0 else None
+anterior = cfg.get("compara_com") or (versoes[versoes.index(versao) - 1] if versoes.index(versao) > 0 else None)
 
 nb = nbf.v4.new_notebook()
 cells = []
@@ -133,6 +133,38 @@ for (i, divisao), (j, met) in [(a, b) for a in enumerate(["agrupada", "temporal"
     ax.grid(axis="y", visible=False)
 fig.suptitle("Estimativa e IC 95% no teste", x=0.01, ha="left", fontweight="bold")
 plt.tight_layout(); plt.show()
+""")
+
+md("""
+### Calibração: risco previsto × real
+
+A AUC mede a ordenação; a calibração mede se a probabilidade é confiável como valor. Isso importa quando a
+mensageria decide por limiar ("alertar acima de 20% de risco"). Pontos sobre a diagonal = bem calibrado.
+""")
+
+code("""
+base_cal = load_bases()[EXPERIMENTOS[VERSAO]["base"]]
+fig, axes = plt.subplots(1, 2, figsize=(12, 4.5), sharey=True)
+for ax, divisao in zip(axes, ["agrupada", "temporal"]):
+    sub = P[P.divisao == divisao]
+    lim = max(sub.p.quantile(0.99), sub.groupby("modelo").y.mean().max()) * 1.4
+    ax.plot([0, lim], [0, lim], color=GRAY, ls="--", lw=1)
+    for m in MODELOS:
+        s_ = sub[sub.modelo == m]
+        dec = pd.qcut(s_.p.rank(method="first"), 10, labels=False)
+        g = s_.groupby(dec).agg(previsto=("p", "mean"), real=("y", "mean"))
+        ax.plot(g.previsto, g.real, "o-", color=COR[m], lw=1.5, ms=5, mec="white", label=m)
+    ax.set_xlim(0, lim); ax.set_ylim(0, lim)
+    ax.set_title(f"{divisao}: decis de risco"); ax.set_xlabel("risco previsto (média do decil)")
+axes[0].set_ylabel("taxa real de no-show"); axes[1].legend(frameon=False, fontsize=8)
+plt.tight_layout(); plt.show()
+
+sub = P[P.divisao == "temporal"].assign(
+    ano=base_cal.appointment_date.iloc[P[P.divisao == "temporal"].linha].dt.year.to_numpy())
+nivel = sub.groupby(["ano", "modelo"]).p.mean().unstack()[MODELOS]
+nivel.insert(0, "real", sub[sub.modelo == MODELOS[0]].groupby("ano").y.mean())
+print("Divisão temporal: risco médio previsto × taxa real, por ano")
+nivel.style.format("{:.1%}")
 """)
 
 md("""
