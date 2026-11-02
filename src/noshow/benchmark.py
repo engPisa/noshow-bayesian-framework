@@ -119,3 +119,27 @@ def paired_difference(boot: dict, a: str, b: str, metric: str = "roc_auc") -> di
     p = 2 * min((d <= 0).mean(), (d >= 0).mean())
     return {"diferença": float(d.mean()), "ic_inf": float(np.quantile(d, 0.025)),
             "ic_sup": float(np.quantile(d, 0.975)), "p": float(min(p, 1.0))}
+
+
+# ---------------------------------------------------------------- ajuste do nível de risco
+def prior_shift(p: np.ndarray, prevalencia_treino: float, prevalencia_nova: float) -> np.ndarray:
+    """Correção de Saerens et al. (2002): ajusta P(y=1|x) a uma nova prevalência sem reestimar o modelo.
+
+    É monotônica em `p`, então preserva a ordenação; muda só o nível de risco.
+    """
+    a = p * prevalencia_nova / prevalencia_treino
+    b = (1 - p) * (1 - prevalencia_nova) / (1 - prevalencia_treino)
+    return a / (a + b)
+
+
+def recent_rate(dates: pd.Series, y: np.ndarray, conhecidos: np.ndarray, inicio: pd.Timestamp,
+                meses: int = 6, minimo: int = 500) -> float:
+    """Taxa de no-show dos registros conhecidos nos `meses` anteriores a `inicio`; se houver menos de `minimo`,
+    usa os `minimo` registros mais recentes antes de `inicio`."""
+    datas = dates.iloc[conhecidos].to_numpy()
+    anteriores = conhecidos[datas < np.datetime64(inicio)]
+    datas = dates.iloc[anteriores].to_numpy()
+    janela = anteriores[datas >= np.datetime64(inicio - pd.DateOffset(months=meses))]
+    if len(janela) < minimo:
+        janela = anteriores[np.argsort(datas, kind="stable")[-minimo:]]
+    return float(np.mean(y[janela]))
