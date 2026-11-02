@@ -1,0 +1,426 @@
+# Fonte única dos requisitos do projeto.
+#
+# Numeração global e única (nunca reutilizar um número): RF-NNN funcional · RNF-NNN não funcional ·
+# CA-NNN critério de aceitação de tarefa técnica. Cada item aponta implementação, verificação e PR de entrega.
+# `cenarios` liga cada cenário de aceite (na ordem da issue) aos requisitos que ele verifica.
+#
+# Gerar a matriz e sincronizar as issues:  .venv/bin/python scripts/rastreabilidade.py [--sincronizar]
+
+issues:
+  1:
+    titulo: Carga da base e identificação aproximada de pacientes
+    pr: 15
+    cenarios: {1: [RF-003], 2: [RF-003]}
+    requisitos:
+      - id: RF-001
+        texto: Converter datas `dd/mm/aaaa` e tratar datas inválidas como ausentes
+        implementacao: [src/noshow/data.py::load_raw]
+        verificacao: [notebook 01_diagnostico §4]
+      - id: RF-002
+        texto: Converter textos em branco para ausentes e o alvo para 0/1
+        implementacao: [src/noshow/data.py::load_raw]
+        verificacao: [notebook 01_diagnostico §1]
+      - id: RF-003
+        texto: Reconstruir `patient_id` a partir de atributos estáveis do cadastro
+        implementacao: [src/noshow/data.py::add_patient_proxy]
+        verificacao: [tests::test_ligacao_aproximada_de_pacientes, notebook 01_diagnostico §5]
+      - id: RF-004
+        texto: Marcar `no_show_reason` como coluna de vazamento
+        implementacao: [src/noshow/data.py::LEAKAGE_COLS]
+        verificacao: [tests::test_raw_matrix_exclui_vazamento_e_datas, notebook 01_diagnostico §3]
+  2:
+    titulo: Correção e validação do clima com o Open-Meteo
+    pr: 15
+    cenarios: {1: [RF-005, RF-006, RF-008], 2: [RF-005]}
+    requisitos:
+      - id: RF-005
+        texto: Remover os valores de preenchimento e as colunas de dia anterior
+        implementacao: [src/noshow/weather.py::fix_weather]
+        verificacao: [tests::test_fix_weather_preenche_temperatura_e_mantem_chuva_ausente]
+      - id: RF-006
+        texto: Preencher a temperatura dos dias ausentes com o histórico do Open-Meteo (ERA5)
+        implementacao: [src/noshow/weather.py::fix_weather, src/noshow/weather.py::load_openmeteo]
+        verificacao: [tests::test_fix_weather_preenche_temperatura_e_mantem_chuva_ausente]
+      - id: RF-007
+        texto: Validar a fonte externa contra os dias medidos antes de usá-la
+        implementacao: [data/external/validacao_clima_base_x_openmeteo.csv]
+        verificacao: [notebook 00_eda Atividade 3 (Sobre o clima)]
+      - id: RF-008
+        texto: Registrar a origem de cada valor em `clima_fonte`
+        implementacao: [src/noshow/weather.py::fix_weather]
+        verificacao: [tests::test_fix_weather_preenche_temperatura_e_mantem_chuva_ausente]
+      - id: RNF-001
+        texto: Download reproduzível do histórico (`download_openmeteo`)
+        implementacao: [src/noshow/weather.py::download_openmeteo, data/external/README.md]
+        verificacao: [execução manual documentada em data/external/README.md]
+  3:
+    titulo: Diagnóstico e análise exploratória da base
+    pr: 15
+    cenarios: {1: [RF-009, RF-010, RF-011]}
+    requisitos:
+      - id: RF-009
+        texto: "Notebook de diagnóstico: vazamento, deriva temporal, ausentes informativos, pacientes recorrentes"
+        implementacao: [notebooks/01_diagnostico.ipynb]
+        verificacao: [execução completa do notebook]
+      - id: RF-010
+        texto: Notebook de EDA com 8 atividades e checkpoints preenchidos com resultados reais
+        implementacao: [notebooks/00_eda.ipynb]
+        verificacao: [execução completa do notebook]
+      - id: RF-011
+        texto: Testes de hipótese com tamanho de efeito
+        implementacao: [notebooks/00_eda.ipynb Atividade 7]
+        verificacao: [execução completa do notebook]
+  4:
+    titulo: Engenharia de variáveis com histórico causal do paciente
+    pr: 16
+    cenarios: {1: [RF-013], 2: [RF-016]}
+    requisitos:
+      - id: RF-012
+        texto: Idade na data da consulta e faixas etárias
+        implementacao: [src/noshow/features.py::add_age]
+        verificacao: [tests::test_idade_calculada_na_data_da_consulta]
+      - id: RF-013
+        texto: Histórico do paciente usando apenas dias anteriores
+        implementacao: [src/noshow/features.py::add_patient_history]
+        verificacao: [tests::test_historico_usa_apenas_dias_anteriores, tests::test_falta_no_mesmo_dia_nao_entra_no_historico,
+                      tests::test_historico_nao_mistura_pacientes_e_ignora_ordem_das_linhas,
+                      tests::test_paciente_sem_id_fica_com_historico_ausente]
+      - id: RF-014
+        texto: Ausência como categoria explícita (`cadastro_ausente`)
+        implementacao: [src/noshow/features.py::group_categories]
+        verificacao: [tests::test_cadastro_ausente_detecta_bloco_vazio_antes_de_preencher]
+      - id: RF-015
+        texto: Calendário (dia, faixa horária com 17h e 18h separadas, mês, estação, período)
+        implementacao: [src/noshow/features.py::add_calendar]
+        verificacao: [notebook 02_engenharia_variaveis §3]
+      - id: RF-016
+        texto: Discretizador por quantis ajustado só no treino
+        implementacao: [src/noshow/features.py::Discretizer]
+        verificacao: [tests::test_discretizer_aprende_cortes_so_no_fit_e_trata_nan, tests::test_discretizer_unifica_cortes_repetidos]
+      - id: RNF-002
+        texto: Testes cobrindo vazamento do histórico
+        implementacao: [tests/test_features.py]
+        verificacao: [CI (pytest)]
+  5:
+    titulo: Notebook de engenharia de variáveis
+    pr: 16
+    cenarios: {1: [RF-017, RF-018, RF-019]}
+    requisitos:
+      - id: RF-017
+        texto: Exemplo do histórico com um paciente real
+        implementacao: [notebooks/02_engenharia_variaveis.ipynb §4]
+        verificacao: [verificações de sanidade no notebook]
+      - id: RF-018
+        texto: Controle do efeito do histórico pela deriva temporal
+        implementacao: [notebooks/02_engenharia_variaveis.ipynb §4]
+        verificacao: [execução completa do notebook]
+      - id: RF-019
+        texto: Catálogo, associação com o alvo e matriz de redundância
+        implementacao: [notebooks/02_engenharia_variaveis.ipynb §5–§7]
+        verificacao: [notebook confere que a base salva é idêntica à do módulo]
+  6:
+    titulo: Rede Bayesiana com delimitação pelo Manto de Markov
+    pr: 17
+    cenarios: {1: [RF-022], 2: [RF-023]}
+    requisitos:
+      - id: RF-020
+        texto: Hill Climbing (BIC/AIC) com conhecimento especialista
+        implementacao: [src/noshow/bayes.py::learn_structure]
+        verificacao: [notebook 03_rede_bayesiana §1]
+      - id: RF-021
+        texto: Manto de Markov (pais, filhos e pais dos filhos)
+        implementacao: [src/noshow/bayes.py::markov_blanket]
+        verificacao: [tests::test_manto_de_markov_inclui_pais_filhos_e_copais]
+      - id: RF-022
+        texto: CPTs com priori BDeu e inferência vetorizada sobre o Manto
+        implementacao: [src/noshow/bayes.py::DiscreteBN]
+        verificacao: [tests::test_cpt_com_priori_bdeu_soma_um_e_nunca_zera, tests::test_predicao_com_pais_e_igual_a_cpt,
+                      tests::test_naive_bayes_reproduz_bayes_manual, tests::test_estado_fora_do_dominio_gera_erro_claro,
+                      tests::test_n_params_conta_parametros_livres]
+      - id: RF-023
+        texto: Validação cruzada repetida agrupada por paciente e Wilcoxon pareado
+        implementacao: [src/noshow/evaluation.py::repeated_group_folds, src/noshow/evaluation.py::patient_groups,
+                        src/noshow/evaluation.py::paired_wilcoxon]
+        verificacao: [tests::test_folds_nunca_dividem_um_paciente]
+  7:
+    titulo: Experimento da H2 (Manto de Markov × rede completa)
+    pr: 17
+    cenarios: {1: [RF-024]}
+    requisitos:
+      - id: RF-024
+        texto: Rede completa, rede do Manto e Naive Bayes completo em 5 × 3 folds
+        implementacao: [notebooks/03_rede_bayesiana.ipynb §5, resultados/h2_validacao_cruzada.csv]
+        verificacao: [notebook confere métricas idênticas entre rede completa e Manto]
+      - id: RF-025
+        texto: ROC-AUC, PR-AUC e Brier com Wilcoxon pareado
+        implementacao: [src/noshow/evaluation.py::metrics, src/noshow/evaluation.py::paired_wilcoxon]
+        verificacao: [notebook 03_rede_bayesiana §5]
+      - id: RF-026
+        texto: Sensibilidade ao critério de pontuação e ao limite de pais
+        implementacao: [notebooks/03_rede_bayesiana.ipynb §2 e §6]
+        verificacao: [execução completa do notebook]
+      - id: RNF-003
+        texto: Reprodutibilidade com `PYTHONHASHSEED=0`
+        implementacao: [README.md (Reprodutibilidade), kernel do projeto]
+        verificacao: [duas execuções seguidas do notebook 03 com resultado idêntico]
+  8:
+    titulo: Pipeline de escalonamento e SMOTENC
+    pr: 18
+    cenarios: {1: [RF-028]}
+    requisitos:
+      - id: RF-027
+        texto: MinMax, Standard e Robust ajustados só no treino
+        implementacao: [src/noshow/pipeline.py::smotenc_resample]
+        verificacao: [tests::test_smotenc_balanceia_e_preserva_formato]
+      - id: RF-028
+        texto: SMOTENC com imputação e indicadores de ausência herdados pelos sintéticos
+        implementacao: [src/noshow/pipeline.py::smotenc_resample]
+        verificacao: [tests::test_smotenc_restaura_ausentes_e_mantem_escala, tests::test_smotenc_e_deterministico]
+      - id: RF-029
+        texto: Controle com as colunas originais da base
+        implementacao: [src/noshow/pipeline.py::raw_matrix]
+        verificacao: [tests::test_raw_matrix_exclui_vazamento_e_datas]
+      - id: RF-030
+        texto: Métricas de matriz de confusão por limiar
+        implementacao: [src/noshow/pipeline.py::classification_report_at]
+        verificacao: [tests::test_classification_report_at]
+  9:
+    titulo: Experimentos controlados da H1/H3
+    pr: 18
+    cenarios: {1: [RF-031]}
+    requisitos:
+      - id: RF-031
+        texto: 7 configurações × 15 folds agrupados por paciente
+        implementacao: [src/noshow/experiments.py::run_config, scripts/run_h3.py, resultados/h3_validacao_cruzada.csv]
+        verificacao: [notebook 04_experimentos §2]
+      - id: RF-032
+        texto: Wilcoxon com correção de Holm
+        implementacao: [notebooks/04_experimentos.ipynb §2]
+        verificacao: [execução completa do notebook]
+      - id: RF-033
+        texto: Validação temporal (treino até 2020, teste 2021–2022)
+        implementacao: [scripts/run_h3.py::validacao_temporal, resultados/h3_validacao_temporal.csv]
+        verificacao: [notebook 04_experimentos §5]
+      - id: RF-034
+        texto: Explicação do efeito do SMOTENC sobre a estrutura da rede
+        implementacao: [notebooks/04_experimentos.ipynb §3]
+        verificacao: [execução completa do notebook]
+  10:
+    titulo: Variáveis v2 e ligação aproximada de pacientes
+    pr: 19
+    cenarios: {1: [RF-035]}
+    requisitos:
+      - id: RF-035
+        texto: Faltas nas últimas 3/5 consultas, sequência de faltas e taxa em 90 dias
+        implementacao: [src/noshow/features.py::add_recent_history]
+        verificacao: [tests::test_historico_recente_sequencia_e_janela_de_90_dias]
+      - id: RF-036
+        texto: Taxa de faltas na mesma especialidade e ordem da consulta no dia
+        implementacao: [src/noshow/features.py::add_recent_history]
+        verificacao: [tests::test_historico_por_especialidade_e_ordem_no_dia]
+      - id: RF-037
+        texto: Proximidade de feriados nacionais/SC e pontos facultativos
+        implementacao: [src/noshow/features.py::holiday_proximity]
+        verificacao: [tests::test_proximidade_de_feriado]
+      - id: RF-038
+        texto: Ligação aproximada sem data de nascimento com `id_qualidade`
+        implementacao: [src/noshow/data.py::add_patient_proxy]
+        verificacao: [tests::test_ligacao_aproximada_de_pacientes]
+  11:
+    titulo: Divisões 70/30 e modelos de comparação
+    pr: 19
+    cenarios: {1: [RF-039]}
+    requisitos:
+      - id: RF-039
+        texto: Divisão agrupada por paciente (30% das linhas) e temporal (sem partir um dia)
+        implementacao: [src/noshow/benchmark.py::group_holdout, src/noshow/benchmark.py::temporal_holdout]
+        verificacao: [tests::test_group_holdout_respeita_fracao_e_grupos, tests::test_temporal_holdout_nao_parte_um_dia]
+      - id: RF-040
+        texto: Regressão logística e LightGBM com Optuna na validação interna
+        implementacao: [src/noshow/benchmark.py::fit_logistic, src/noshow/benchmark.py::fit_lightgbm,
+                        src/noshow/benchmark.py::inner_splits]
+        verificacao: [tests::test_recalibracao_com_janela_roda_ponta_a_ponta]
+      - id: RF-041
+        texto: Bootstrap reamostrando pacientes e diferença pareada
+        implementacao: [src/noshow/benchmark.py::grouped_bootstrap, src/noshow/benchmark.py::paired_difference]
+        verificacao: [tests::test_bootstrap_pareado_detecta_modelo_melhor]
+  12:
+    titulo: Registro de experimentos versionados (v1–v3)
+    pr: 19
+    cenarios: {1: [RF-042, RF-043]}
+    requisitos:
+      - id: RF-042
+        texto: Registro de versões com título, mudança, base e variáveis
+        implementacao: [src/noshow/registry.py::EXPERIMENTOS]
+        verificacao: [tests::test_registro_tem_campos_obrigatorios]
+      - id: RF-043
+        texto: Gerador de notebooks `05_experimento_vN`
+        implementacao: [scripts/novo_experimento.py]
+        verificacao: [notebooks v1–v5 gerados e executados]
+      - id: RF-044
+        texto: Registro escrito de cada versão em `resultados/experimentos/vN/registro.md`
+        implementacao: [resultados/experimentos/vN/registro.md]
+        verificacao: [seção "Registro do experimento" de cada notebook]
+      - id: RF-045
+        texto: Experimentos v1 (linha de base), v2 (variáveis) e v3 (ID aproximado)
+        implementacao: [notebooks/05_experimento_v1.ipynb, notebooks/05_experimento_v2.ipynb, notebooks/05_experimento_v3.ipynb]
+        verificacao: [execução completa dos notebooks]
+  13:
+    titulo: Recalibração periódica (v4 e v5)
+    pr: 19
+    cenarios: {1: [RF-046]}
+    requisitos:
+      - id: RF-046
+        texto: Retreino trimestral com janela expansiva (v4)
+        implementacao: [src/noshow/registry.py::recalibration_blocks, src/noshow/registry.py::_fit_recalibrado]
+        verificacao: [tests::test_recalibracao_so_usa_o_que_ja_era_conhecido]
+      - id: RF-047
+        texto: Retreino com janela deslizante de 12 meses (v5)
+        implementacao: [src/noshow/registry.py::recalibration_blocks]
+        verificacao: [tests::test_janela_deslizante_descarta_o_que_e_antigo]
+      - id: RF-048
+        texto: Hiperparâmetros escolhidos uma vez, só com o treino original
+        implementacao: [src/noshow/registry.py::_tune]
+        verificacao: [tests::test_recalibracao_com_janela_roda_ponta_a_ponta]
+  14:
+    titulo: Documentar estrutura, instalação e fluxo de experimentos
+    pr: 20
+    requisitos:
+      - id: CA-001
+        texto: Instalação reproduzível em uma máquina nova
+        implementacao: [README.md (Instalação)]
+        verificacao: [comandos executados no ambiente do projeto]
+      - id: CA-002
+        texto: Indica que a base de dados não é versionada e onde colocá-la
+        implementacao: [README.md (Instalação)]
+        verificacao: [revisão do README]
+      - id: CA-003
+        texto: Descreve o fluxo issue → PR → main com conventional commits
+        implementacao: [README.md (Contribuição)]
+        verificacao: [revisão do README]
+      - id: CA-004
+        texto: Lista as versões v1–v5
+        implementacao: [README.md (Registrar um novo experimento)]
+        verificacao: [revisão do README]
+  21:
+    titulo: Gerar as bases de variáveis pelo código do projeto
+    pr: null
+    requisitos:
+      - id: CA-005
+        texto: As bases são geradas por código versionado
+        implementacao: [src/noshow/registry.py::build_bases]
+        verificacao: [bases regeneradas do zero a partir de data/raw]
+      - id: CA-006
+        texto: As colunas existentes ficam idênticas às usadas nos experimentos v1–v5
+        implementacao: [src/noshow/registry.py::BASE_COLS]
+        verificacao: [comparação das 36 colunas existentes nas duas bases (idênticas)]
+      - id: CA-007
+        texto: "`load_bases` gera as bases quando ausentes"
+        implementacao: [src/noshow/registry.py::load_bases]
+        verificacao: [execução dos notebooks 05 sem bases prévias]
+  22:
+    titulo: Experimento v6 — ajuste do nível de risco
+    pr: null
+    cenarios: {1: [RF-049], 2: [RF-049, RF-051]}
+    requisitos:
+      - id: RF-049
+        texto: Corrigir a priori em cada retreino com a taxa dos últimos 6 meses conhecidos (correção de Saerens)
+        implementacao: [src/noshow/benchmark.py::prior_shift, src/noshow/benchmark.py::recent_rate,
+                        src/noshow/registry.py::_fit_recalibrado]
+        verificacao: [tests::test_prior_shift_preserva_ordem_e_ajusta_nivel, tests::test_taxa_recente_usa_janela_e_minimo,
+                      tests::test_recalibracao_com_janela_roda_ponta_a_ponta]
+      - id: RF-050
+        texto: Manter a ordenação dentro de cada trimestre (a correção é monotônica)
+        implementacao: [src/noshow/benchmark.py::prior_shift]
+        verificacao: [tests::test_prior_shift_preserva_ordem_e_ajusta_nivel]
+      - id: RF-051
+        texto: Curvas de calibração por decil nos notebooks de experimento
+        implementacao: [scripts/novo_experimento.py (Calibração)]
+        verificacao: [notebook 05_experimento_v6 §2]
+      - id: RF-052
+        texto: Notebook `05_experimento_v6` com registro
+        implementacao: [notebooks/05_experimento_v6.ipynb, resultados/experimentos/v6/registro.md]
+        verificacao: [execução completa do notebook]
+  23:
+    titulo: Experimento v7 — histórico suavizado, partida a frio e recência
+    pr: null
+    cenarios: {1: [RF-055, RF-056], 2: [RF-053]}
+    requisitos:
+      - id: RF-053
+        texto: Taxa de faltas suavizada (Beta-Binomial) com priori causal
+        implementacao: [src/noshow/features.py::add_cold_start_and_smoothing]
+        verificacao: [tests::test_taxas_da_populacao_e_suavizacao_usam_so_o_passado]
+      - id: RF-054
+        texto: Taxa de faltas ponderada pela recência (decaimento exponencial)
+        implementacao: [src/noshow/features.py::add_cold_start_and_smoothing]
+        verificacao: [tests::test_taxa_ponderada_pela_recencia]
+      - id: RF-055
+        texto: Taxas da população por especialidade e por cidade, calculadas só com o passado (partida a frio)
+        implementacao: [src/noshow/features.py::add_cold_start_and_smoothing]
+        verificacao: [tests::test_taxas_da_populacao_e_suavizacao_usam_so_o_passado]
+      - id: RF-056
+        texto: Indicador de primeira consulta
+        implementacao: [src/noshow/features.py::add_cold_start_and_smoothing]
+        verificacao: [tests::test_taxas_da_populacao_e_suavizacao_usam_so_o_passado]
+      - id: RNF-004
+        texto: Testes de vazamento para todas as variáveis novas
+        implementacao: [tests/test_features.py]
+        verificacao: [CI (pytest)]
+  24:
+    titulo: Experimento v8 — rótulo limpo
+    pr: null
+    cenarios: {1: [RF-057, RF-058]}
+    requisitos:
+      - id: RF-057
+        texto: Marcar os no-shows com motivo de cancelamento/aviso na base, fora das variáveis do modelo
+        implementacao: [src/noshow/features.py::add_label_quality]
+        verificacao: [tests::test_falta_avisada_marca_so_no_show_com_motivo_de_cancelamento]
+      - id: RF-058
+        texto: Excluir esses registros apenas do treino
+        implementacao: [src/noshow/registry.py::run, src/noshow/registry.py::_fit_recalibrado]
+        verificacao: [tests::test_recalibracao_com_janela_roda_ponta_a_ponta, tests::test_run_origins_ponta_a_ponta]
+      - id: RF-059
+        texto: Avaliar no teste com o rótulo original, para comparar com a v7
+        implementacao: [src/noshow/registry.py::run]
+        verificacao: [notebook 05_experimento_v8 §3 (comparação pareada com a v7)]
+  25:
+    titulo: Avaliação operacional com várias origens no tempo
+    pr: null
+    cenarios: {1: [RF-060, RF-061]}
+    requisitos:
+      - id: RF-060
+        texto: Várias origens temporais (treino com o passado, teste nos 6 meses seguintes)
+        implementacao: [src/noshow/operational.py::rolling_origins, src/noshow/operational.py::run_origins]
+        verificacao: [tests::test_origens_treinam_so_com_o_passado, tests::test_run_origins_ponta_a_ponta]
+      - id: RF-061
+        texto: Comparar a linha de base com a melhor configuração da fase 7
+        implementacao: [notebooks/06_avaliacao_operacional.ipynb]
+        verificacao: [execução completa do notebook]
+      - id: RF-062
+        texto: Faltas detectadas e precisão para volumes de alerta fixos
+        implementacao: [src/noshow/operational.py::decision_table]
+        verificacao: [tests::test_tabela_de_decisao]
+      - id: RF-063
+        texto: Desempenho por subgrupo (faixa etária, especialidade, histórico, qualidade do ID)
+        implementacao: [src/noshow/operational.py::subgroup_auc]
+        verificacao: [tests::test_auc_por_subgrupo]
+  26:
+    titulo: Rastreabilidade global dos requisitos
+    pr: null
+    requisitos:
+      - id: CA-008
+        texto: "Numeração global única: `RF-NNN` (funcional), `RNF-NNN` (não funcional) e `CA-NNN` (critério de tarefa técnica)"
+        implementacao: [requisitos.yml]
+        verificacao: [scripts/rastreabilidade.py valida unicidade e sequência]
+      - id: CA-009
+        texto: Cada requisito aponta implementação, verificação (teste automatizado ou notebook) e PR de entrega
+        implementacao: [requisitos.yml, REQUISITOS.md]
+        verificacao: [scripts/rastreabilidade.py valida campos e testes citados]
+      - id: CA-010
+        texto: Cada cenário de aceite indica os requisitos que verifica
+        implementacao: [requisitos.yml (cenarios)]
+        verificacao: [scripts/rastreabilidade.py valida que os ids citados existem na issue]
+      - id: CA-011
+        texto: Fonte única versionada (`requisitos.yml`) que gera a matriz `REQUISITOS.md` e sincroniza as issues, inclusive as fechadas
+        implementacao: [scripts/rastreabilidade.py]
+        verificacao: [tests::test_rastreabilidade_valida_a_fonte_unica]
