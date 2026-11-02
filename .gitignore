@@ -14,3 +14,4 @@ resultados/experimentos/*/predicoes.parquet
 # material local
 referencias/
 docs/
+resultados/avaliacao_operacional/predicoes.parquet
