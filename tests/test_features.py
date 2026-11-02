@@ -178,3 +178,51 @@ def test_ligacao_aproximada_de_pacientes():
     assert pd.notna(out["patient_id"].iloc[2]) and out["patient_id"].iloc[2] != out["patient_id"].iloc[0]
     assert pd.isna(out["patient_id"].iloc[3])
     assert out["id_qualidade"].tolist() == ["exato", "aproximado", "aproximado", "ausente"]
+
+
+def _agenda_v3(rows):
+    """(paciente, data, especialidade, cidade, no_show) → base com o histórico básico já calculado."""
+    from noshow.features import add_patient_history
+    df = pd.DataFrame(rows, columns=["patient_id", "appointment_date", "specialty_grp", "city_grp", "no_show"])
+    df["appointment_date"] = pd.to_datetime(df["appointment_date"])
+    df["patient_id"] = df["patient_id"].astype("Int64")
+    return add_patient_history(df)
+
+
+def test_taxas_da_populacao_e_suavizacao_usam_so_o_passado():
+    from noshow.features import add_cold_start_and_smoothing
+    df = add_cold_start_and_smoothing(_agenda_v3([
+        (1, "2020-01-06", "fono", "A", 1),
+        (2, "2020-01-06", "fisio", "A", 0),
+        (1, "2020-01-13", "fono", "A", 0),
+        (3, "2020-01-13", "fono", "B", 0),   # paciente novo
+    ]), k=2)
+    d = df.set_index(["patient_id", "appointment_date"])
+    novo = d.loc[(3, pd.Timestamp("2020-01-13"))]
+    assert novo["taxa_populacao_especialidade"] == 1.0          # única consulta anterior de fono faltou
+    assert np.isnan(novo["taxa_populacao_cidade"])              # cidade B sem passado
+    assert novo["primeira_consulta"] == "sim"
+    assert novo["taxa_faltas_suavizada"] == pytest.approx(0.5)  # sem histórico → priori (1 falta em 2)
+    antigo = d.loc[(1, pd.Timestamp("2020-01-13"))]
+    assert antigo["taxa_faltas_suavizada"] == pytest.approx((1 + 2 * 0.5) / (1 + 2))
+    assert np.isnan(d.loc[(1, pd.Timestamp("2020-01-06")), "taxa_populacao_especialidade"])  # nada antes do 1º dia
+
+
+def test_taxa_ponderada_pela_recencia():
+    from noshow.features import add_cold_start_and_smoothing
+    df = add_cold_start_and_smoothing(_agenda_v3([
+        (1, "2020-01-01", "fono", "A", 1),
+        (1, "2020-03-31", "fono", "A", 0),   # 90 dias depois
+        (1, "2020-04-01", "fono", "A", 0),
+    ]), meia_vida=90)
+    r = df["taxa_faltas_recencia"].tolist()
+    assert np.isnan(r[0])
+    assert r[1] == pytest.approx(1.0)
+    peso_falta, peso_ok = 2 ** (-91 / 90), 2 ** (-1 / 90)       # a falta antiga pesa menos
+    assert r[2] == pytest.approx(peso_falta / (peso_falta + peso_ok))
+
+
+def test_falta_avisada_marca_so_no_show_com_motivo_de_cancelamento():
+    from noshow.features import add_label_quality
+    df = pd.DataFrame({"no_show": [1, 1, 0, 1], "no_show_reason": ["Desmarcou", "doente", "avisou", None]})
+    assert add_label_quality(df)["falta_avisada"].tolist() == [1, 0, 0, 0]
