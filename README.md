@@ -21,7 +21,8 @@ src/noshow/          o framework
   pipeline.py          escalonamento + SMOTENC (com ausentes) e métricas por limiar
   experiments.py       configurações dos experimentos H1/H3
   benchmark.py         divisões 70/30, regressão logística, LightGBM (Optuna) e bootstrap por paciente
-  registry.py          registro dos experimentos 70/30 (v1, v2, v3, ...)
+  registry.py          registro dos experimentos 70/30 (v1, v2, v3, ...) e geração das bases de modelagem
+  operational.py       avaliação com várias origens no tempo, métrica de decisão e subgrupos
 notebooks/
   00_eda.ipynb                  análise exploratória (formato do desafio de EDA)
   01_diagnostico.ipynb          qualidade, vazamento e estrutura de validação
@@ -29,8 +30,12 @@ notebooks/
   03_rede_bayesiana.ipynb       estrutura, Manto de Markov e H2
   04_experimentos.ipynb         dados brutos × framework (H1/H3), validação cruzada e temporal
   05_experimento_vN.ipynb       um notebook por experimento 70/30 (agrupado e temporal)
+  06_avaliacao_operacional.ipynb  7 origens no tempo, faltas alcançadas por volume de alertas e subgrupos
 scripts/run_h3.py    calcula os experimentos do notebook 04 (~25 min)
 scripts/novo_experimento.py  gera o notebook de um experimento registrado
+scripts/rastreabilidade.py   valida requisitos.yml, gera REQUISITOS.md e sincroniza as issues
+requisitos.yml       fonte única dos requisitos (RF/RNF/CA) com implementação, verificação e entrega
+REQUISITOS.md        matriz de rastreabilidade gerada a partir de requisitos.yml
 resultados/          métricas por fold dos experimentos
 tests/               testes automatizados (pytest)
 ```
@@ -51,7 +56,8 @@ A base de dados **não é versionada**. Coloque o arquivo `medical-appointments-
 antes de executar os notebooks.
 
 No VS Code/Jupyter, selecione o kernel **"TCC no-show (.venv)"**. Os notebooks devem ser executados em ordem
-(00 → 04); o 02 gera a base usada pelo 03 e pelo 04. O notebook 04 carrega os resultados de
+(00 → 06); o 02 gera a base usada pelo 03 e pelo 04, e as bases dos experimentos 05/06 são geradas automaticamente
+na primeira execução (`noshow.registry.build_bases`). O notebook 04 carrega os resultados de
 `resultados/`; para recalculá-los: `PYTHONHASHSEED=0 .venv/bin/python scripts/run_h3.py`.
 
 ## Registrar um novo experimento
@@ -72,6 +78,9 @@ pareadas.
 | v3 | + ligação aproximada de pacientes |
 | v4 | + recalibração trimestral na divisão temporal |
 | v5 | recalibração com janela deslizante de 12 meses |
+| v6 | ajuste do nível de risco (correção da priori), sobre a v4 |
+| v7 | + histórico suavizado, recência e partida a frio |
+| v8 | rótulo limpo (sem cancelamentos avisados no treino) |
 
 ## Contribuição
 
@@ -79,6 +88,10 @@ pareadas.
   por exemplo `feat(features): adiciona histórico recente`. O CI rejeita commits fora do padrão.
 - Cada entrega vira uma issue (templates em `.github/ISSUE_TEMPLATE`) dentro da milestone da fase e um PR para a
   `main` seguindo `.github/PULL_REQUEST_TEMPLATE/default.md`, fechando a issue com `Closes #n`.
+- **Requisitos com numeração global** (`RF-NNN`, `RNF-NNN`, `CA-NNN`), nunca reiniciada por issue. A fonte única é
+  `requisitos.yml`: cada requisito aponta implementação, verificação e PR de entrega. Para incluir ou alterar um
+  requisito, edite o YAML e rode `.venv/bin/python scripts/rastreabilidade.py --sincronizar`, que valida a fonte,
+  regenera a matriz [`REQUISITOS.md`](REQUISITOS.md) e atualiza o corpo das issues (inclusive as fechadas).
 - Os notebooks são versionados **sem saídas** (filtro `nbstripout`).
 - A base de dados e as predições linha a linha não são versionadas.
 
