@@ -73,6 +73,21 @@ FEATURES_V2 = {
 CATEGORICAL_V2 = [f for f, (t, _) in FEATURES_V2.items() if t == "categorical"]
 CONTINUOUS_V2 = [f for f, (t, _) in FEATURES_V2.items() if t == "continuous"]
 
+# Versão 3 (experimento v7): histórico suavizado, recência e partida a frio.
+FEATURES_V3 = {
+    **FEATURES_V2,
+    "taxa_faltas_suavizada": ("continuous", "comportamental"),
+    "taxa_faltas_recencia": ("continuous", "comportamental"),
+    "primeira_consulta": ("categorical", "comportamental"),
+    "taxa_populacao_especialidade": ("continuous", "contextual"),
+    "taxa_populacao_cidade": ("continuous", "demográfico"),
+}
+CATEGORICAL_V3 = [f for f, (t, _) in FEATURES_V3.items() if t == "categorical"]
+CONTINUOUS_V3 = [f for f, (t, _) in FEATURES_V3.items() if t == "continuous"]
+
+# Motivos que indicam cancelamento ou aviso prévio: não são no-show pela definição da Seção 2.1.1.
+CANCELAMENTO = r"desmarc|remarc|cancel|avisou|desist|transferid"
+
 
 def add_age(df: pd.DataFrame) -> pd.DataFrame:
     """Idade na data da consulta (a coluna `age` original é a idade na extração da base, ~2022)."""
@@ -223,8 +238,61 @@ def add_recent_history(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def _taxa_passada(df: pd.DataFrame, chave: str) -> pd.Series:
+    """Taxa de no-show de todos os agendamentos do grupo `chave` em dias anteriores (sem o próprio dia)."""
+    dias = (df.groupby([chave, "appointment_date"], dropna=False)[TARGET].agg(n="size", f="sum").reset_index()
+            .sort_values([chave, "appointment_date"]))
+    g = dias.groupby(chave, dropna=False)
+    n_ant, f_ant = g["n"].cumsum() - dias["n"], g["f"].cumsum() - dias["f"]
+    dias["taxa"] = (f_ant / n_ant).where(n_ant > 0)
+    return df.merge(dias[[chave, "appointment_date", "taxa"]], on=[chave, "appointment_date"], how="left")["taxa"]
+
+
+def add_cold_start_and_smoothing(df: pd.DataFrame, k: float = 5.0, meia_vida: float = 90.0) -> pd.DataFrame:
+    """Histórico suavizado, ponderado pela recência e taxas da população (partida a frio).
+
+    - priori: taxa de no-show de toda a população em dias anteriores (causal);
+    - `taxa_faltas_suavizada` = (faltas + k·priori) / (consultas + k), Beta-Binomial; paciente novo recebe a priori;
+    - `taxa_faltas_recencia`: faltas e consultas anteriores ponderadas por 2^(−dias/meia_vida);
+    - `taxa_populacao_especialidade` / `_cidade`: taxa do grupo em dias anteriores, útil para quem não tem histórico.
+    Exige as colunas de `add_patient_history` e `group_categories`.
+    """
+    df = df.copy()
+    df["_todos"] = 0
+    priori = _taxa_passada(df, "_todos").to_numpy()
+    df = df.drop(columns="_todos")
+    n, f = df["n_agendamentos_anteriores"], df["n_faltas_anteriores"]
+    df["taxa_faltas_suavizada"] = (f + k * priori) / (n + k)
+    df["primeira_consulta"] = np.select([n.isna(), n == 0], [MISSING, "sim"], "nao")
+    df["taxa_populacao_especialidade"] = _taxa_passada(df, "specialty_grp").to_numpy()
+    df["taxa_populacao_cidade"] = _taxa_passada(df, "city_grp").to_numpy()
+
+    known = df["patient_id"].notna()
+    dias = (df[known].groupby(["patient_id", "appointment_date"])[TARGET].agg(c="size", f="sum").reset_index()
+            .sort_values(["patient_id", "appointment_date"]))
+    taxa = np.full(len(dias), np.nan)
+    for _, idx in dias.groupby("patient_id").indices.items():
+        t = dias["appointment_date"].to_numpy()[idx].astype("datetime64[D]").astype(float)
+        peso = np.exp2(-(t[:, None] - t[None, :]) / meia_vida) * (t[:, None] > t[None, :])  # só dias anteriores
+        num, den = peso @ dias["f"].to_numpy()[idx], peso @ dias["c"].to_numpy()[idx]
+        taxa[idx] = np.where(den > 0, num / np.where(den > 0, den, 1), np.nan)
+    dias["taxa_faltas_recencia"] = taxa
+    return df.drop(columns=["taxa_faltas_recencia"], errors="ignore").merge(
+        dias[["patient_id", "appointment_date", "taxa_faltas_recencia"]], on=["patient_id", "appointment_date"],
+        how="left")
+
+
+def add_label_quality(df: pd.DataFrame) -> pd.DataFrame:
+    """`falta_avisada`: no-show cujo motivo indica cancelamento/aviso. Vem de `no_show_reason` (posterior ao
+    desfecho), então serve só para limpar o rótulo de treino e NUNCA pode ser variável do modelo."""
+    df = df.copy()
+    motivo = df["no_show_reason"].str.lower() if "no_show_reason" in df else pd.Series(np.nan, index=df.index)
+    df["falta_avisada"] = ((df[TARGET] == 1) & motivo.str.contains(CANCELAMENTO, regex=True, na=False)).astype(int)
+    return df
+
+
 def build_features(df: pd.DataFrame | None = None, relaxed_id: bool = False) -> pd.DataFrame:
-    """Base completa: carga, correção do clima, ID aproximado e todas as variáveis de FEATURES_V2.
+    """Base completa: carga, correção do clima, ID aproximado e todas as variáveis de FEATURES_V3.
 
     `relaxed_id=False` reproduz a base dos notebooks 02–04; `True` usa a ligação aproximada de pacientes.
     """
@@ -235,6 +303,8 @@ def build_features(df: pd.DataFrame | None = None, relaxed_id: bool = False) -> 
     df = add_service_time(df)
     df = add_patient_history(df)
     df = add_recent_history(df)
+    df = add_cold_start_and_smoothing(df)
+    df = add_label_quality(df)
     return df
 
 
