@@ -17,7 +17,7 @@ from noshow.benchmark import (fit_lightgbm, fit_logistic, group_holdout, inner_s
                               temporal_holdout, to_lgbm)
 from noshow.evaluation import patient_groups
 from noshow.experiments import fit_predict
-from noshow.features import CATEGORICAL, CATEGORICAL_V2, CONTINUOUS, CONTINUOUS_V2
+from noshow.features import CATEGORICAL, CATEGORICAL_V2, CONTINUOUS, CONTINUOUS_V2, FEATURES_V3, build_features
 
 RAIZ = Path(__file__).resolve().parents[2]
 PROCESSED = RAIZ / "data" / "processed"
@@ -62,8 +62,23 @@ EXPERIMENTOS = {
 MODELOS = ["RB (BIC)", "RB (AIC)", "Regressão logística", "LightGBM"]
 
 
+BASE_COLS = ["appointment_date", "patient_id", "no_show", "falta_avisada"] + list(FEATURES_V3)
+
+
+def build_bases() -> None:
+    """Gera as bases de modelagem (ID exato e aproximado) a partir da base bruta em `data/raw/`.
+
+    `falta_avisada` vem do motivo da falta: só serve para limpar o rótulo de treino (v8), nunca como variável.
+    """
+    PROCESSED.mkdir(parents=True, exist_ok=True)
+    for nome, relaxed in (("exato", False), ("aproximado", True)):
+        build_features(relaxed_id=relaxed)[BASE_COLS].to_parquet(PROCESSED / f"modelagem_{nome}.parquet", index=False)
+
+
 def load_bases() -> dict[str, pd.DataFrame]:
-    bases = {nome: pd.read_parquet(PROCESSED / f"features_v2_{nome}.parquet") for nome in ("exato", "aproximado")}
+    if not all((PROCESSED / f"modelagem_{n}.parquet").exists() for n in ("exato", "aproximado")):
+        build_bases()
+    bases = {nome: pd.read_parquet(PROCESSED / f"modelagem_{nome}.parquet") for nome in ("exato", "aproximado")}
     assert bases["exato"].appointment_date.equals(bases["aproximado"].appointment_date)
     return bases
 
