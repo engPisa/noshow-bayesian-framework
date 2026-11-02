@@ -2,7 +2,7 @@
 
 Gerada por `scripts/rastreabilidade.py` a partir de `requisitos.yml` (fonte única). Não edite à mão.
 
-**78 itens** · 55 entregues · 23 em andamento · **39 com teste automatizado** (50%); os demais são verificados por execução de notebook ou revisão.
+**78 itens** · 78 entregues · 0 em andamento · **39 com teste automatizado** (50%); os demais são verificados por execução de notebook ou revisão.
 
 Prefixos: `RF` funcional · `RNF` não funcional · `CA` critério de tarefa técnica.
 
@@ -63,26 +63,26 @@ Prefixos: `RF` funcional · `RNF` não funcional · `CA` critério de tarefa té
 | **CA-002** | Indica que a base de dados não é versionada e onde colocá-la | #14 | `README.md (Instalação)` | revisão do README | #20 |
 | **CA-003** | Descreve o fluxo issue → PR → main com conventional commits | #14 | `README.md (Contribuição)` | revisão do README | #20 |
 | **CA-004** | Lista as versões v1–v5 | #14 | `README.md (Registrar um novo experimento)` | revisão do README | #20 |
-| **CA-005** | As bases são geradas por código versionado | #21 | `src/noshow/registry.py::build_bases` | bases regeneradas do zero a partir de data/raw | em andamento |
-| **CA-006** | As colunas existentes ficam idênticas às usadas nos experimentos v1–v5 | #21 | `src/noshow/registry.py::BASE_COLS` | comparação das 36 colunas existentes nas duas bases (idênticas) | em andamento |
-| **CA-007** | `load_bases` gera as bases quando ausentes | #21 | `src/noshow/registry.py::load_bases` | execução dos notebooks 05 sem bases prévias | em andamento |
-| **RF-049** | Corrigir a priori em cada retreino com a taxa dos últimos 6 meses conhecidos (correção de Saerens) | #22 | `src/noshow/benchmark.py::prior_shift`<br>`src/noshow/benchmark.py::recent_rate`<br>`src/noshow/registry.py::_fit_recalibrado` | `tests/test_benchmark.py::test_prior_shift_preserva_ordem_e_ajusta_nivel`<br>`tests/test_benchmark.py::test_taxa_recente_usa_janela_e_minimo`<br>`tests/test_registry.py::test_recalibracao_com_janela_roda_ponta_a_ponta` | em andamento |
-| **RF-050** | Manter a ordenação dentro de cada trimestre (a correção é monotônica) | #22 | `src/noshow/benchmark.py::prior_shift` | `tests/test_benchmark.py::test_prior_shift_preserva_ordem_e_ajusta_nivel` | em andamento |
-| **RF-051** | Curvas de calibração por decil nos notebooks de experimento | #22 | `scripts/novo_experimento.py (Calibração)` | notebook 05_experimento_v6 §2 | em andamento |
-| **RF-052** | Notebook `05_experimento_v6` com registro | #22 | `notebooks/05_experimento_v6.ipynb`<br>`resultados/experimentos/v6/registro.md` | execução completa do notebook | em andamento |
-| **RF-053** | Taxa de faltas suavizada (Beta-Binomial) com priori causal | #23 | `src/noshow/features.py::add_cold_start_and_smoothing` | `tests/test_features.py::test_taxas_da_populacao_e_suavizacao_usam_so_o_passado` | em andamento |
-| **RF-054** | Taxa de faltas ponderada pela recência (decaimento exponencial) | #23 | `src/noshow/features.py::add_cold_start_and_smoothing` | `tests/test_features.py::test_taxa_ponderada_pela_recencia` | em andamento |
-| **RF-055** | Taxas da população por especialidade e por cidade, calculadas só com o passado (partida a frio) | #23 | `src/noshow/features.py::add_cold_start_and_smoothing` | `tests/test_features.py::test_taxas_da_populacao_e_suavizacao_usam_so_o_passado` | em andamento |
-| **RF-056** | Indicador de primeira consulta | #23 | `src/noshow/features.py::add_cold_start_and_smoothing` | `tests/test_features.py::test_taxas_da_populacao_e_suavizacao_usam_so_o_passado` | em andamento |
-| **RNF-004** | Testes de vazamento para todas as variáveis novas | #23 | `tests/test_features.py` | CI (pytest) | em andamento |
-| **RF-057** | Marcar os no-shows com motivo de cancelamento/aviso na base, fora das variáveis do modelo | #24 | `src/noshow/features.py::add_label_quality` | `tests/test_features.py::test_falta_avisada_marca_so_no_show_com_motivo_de_cancelamento` | em andamento |
-| **RF-058** | Excluir esses registros apenas do treino | #24 | `src/noshow/registry.py::run`<br>`src/noshow/registry.py::_fit_recalibrado` | `tests/test_registry.py::test_recalibracao_com_janela_roda_ponta_a_ponta`<br>`tests/test_operational.py::test_run_origins_ponta_a_ponta` | em andamento |
-| **RF-059** | Avaliar no teste com o rótulo original, para comparar com a v7 | #24 | `src/noshow/registry.py::run` | notebook 05_experimento_v8 §3 (comparação pareada com a v7) | em andamento |
-| **RF-060** | Várias origens temporais (treino com o passado, teste nos 6 meses seguintes) | #25 | `src/noshow/operational.py::rolling_origins`<br>`src/noshow/operational.py::run_origins` | `tests/test_operational.py::test_origens_treinam_so_com_o_passado`<br>`tests/test_operational.py::test_run_origins_ponta_a_ponta` | em andamento |
-| **RF-061** | Comparar a linha de base com a melhor configuração da fase 7 | #25 | `notebooks/06_avaliacao_operacional.ipynb` | execução completa do notebook | em andamento |
-| **RF-062** | Faltas detectadas e precisão para volumes de alerta fixos | #25 | `src/noshow/operational.py::decision_table` | `tests/test_operational.py::test_tabela_de_decisao` | em andamento |
-| **RF-063** | Desempenho por subgrupo (faixa etária, especialidade, histórico, qualidade do ID) | #25 | `src/noshow/operational.py::subgroup_auc` | `tests/test_operational.py::test_auc_por_subgrupo` | em andamento |
-| **CA-008** | Numeração global única: `RF-NNN` (funcional), `RNF-NNN` (não funcional) e `CA-NNN` (critério de tarefa técnica) | #26 | `requisitos.yml` | scripts/rastreabilidade.py valida unicidade e sequência | em andamento |
-| **CA-009** | Cada requisito aponta implementação, verificação (teste automatizado ou notebook) e PR de entrega | #26 | `requisitos.yml`<br>`REQUISITOS.md` | scripts/rastreabilidade.py valida campos e testes citados | em andamento |
-| **CA-010** | Cada cenário de aceite indica os requisitos que verifica | #26 | `requisitos.yml (cenarios)` | scripts/rastreabilidade.py valida que os ids citados existem na issue | em andamento |
-| **CA-011** | Fonte única versionada (`requisitos.yml`) que gera a matriz `REQUISITOS.md` e sincroniza as issues, inclusive as fechadas | #26 | `scripts/rastreabilidade.py` | `tests/test_rastreabilidade.py::test_rastreabilidade_valida_a_fonte_unica` | em andamento |
+| **CA-005** | As bases são geradas por código versionado | #21 | `src/noshow/registry.py::build_bases` | bases regeneradas do zero a partir de data/raw | #27 |
+| **CA-006** | As colunas existentes ficam idênticas às usadas nos experimentos v1–v5 | #21 | `src/noshow/registry.py::BASE_COLS` | comparação das 36 colunas existentes nas duas bases (idênticas) | #27 |
+| **CA-007** | `load_bases` gera as bases quando ausentes | #21 | `src/noshow/registry.py::load_bases` | execução dos notebooks 05 sem bases prévias | #27 |
+| **RF-049** | Corrigir a priori em cada retreino com a taxa dos últimos 6 meses conhecidos (correção de Saerens) | #22 | `src/noshow/benchmark.py::prior_shift`<br>`src/noshow/benchmark.py::recent_rate`<br>`src/noshow/registry.py::_fit_recalibrado` | `tests/test_benchmark.py::test_prior_shift_preserva_ordem_e_ajusta_nivel`<br>`tests/test_benchmark.py::test_taxa_recente_usa_janela_e_minimo`<br>`tests/test_registry.py::test_recalibracao_com_janela_roda_ponta_a_ponta` | #27 |
+| **RF-050** | Manter a ordenação dentro de cada trimestre (a correção é monotônica) | #22 | `src/noshow/benchmark.py::prior_shift` | `tests/test_benchmark.py::test_prior_shift_preserva_ordem_e_ajusta_nivel` | #27 |
+| **RF-051** | Curvas de calibração por decil nos notebooks de experimento | #22 | `scripts/novo_experimento.py (Calibração)` | notebook 05_experimento_v6 §2 | #27 |
+| **RF-052** | Notebook `05_experimento_v6` com registro | #22 | `notebooks/05_experimento_v6.ipynb`<br>`resultados/experimentos/v6/registro.md` | execução completa do notebook | #27 |
+| **RF-053** | Taxa de faltas suavizada (Beta-Binomial) com priori causal | #23 | `src/noshow/features.py::add_cold_start_and_smoothing` | `tests/test_features.py::test_taxas_da_populacao_e_suavizacao_usam_so_o_passado` | #27 |
+| **RF-054** | Taxa de faltas ponderada pela recência (decaimento exponencial) | #23 | `src/noshow/features.py::add_cold_start_and_smoothing` | `tests/test_features.py::test_taxa_ponderada_pela_recencia` | #27 |
+| **RF-055** | Taxas da população por especialidade e por cidade, calculadas só com o passado (partida a frio) | #23 | `src/noshow/features.py::add_cold_start_and_smoothing` | `tests/test_features.py::test_taxas_da_populacao_e_suavizacao_usam_so_o_passado` | #27 |
+| **RF-056** | Indicador de primeira consulta | #23 | `src/noshow/features.py::add_cold_start_and_smoothing` | `tests/test_features.py::test_taxas_da_populacao_e_suavizacao_usam_so_o_passado` | #27 |
+| **RNF-004** | Testes de vazamento para todas as variáveis novas | #23 | `tests/test_features.py` | CI (pytest) | #27 |
+| **RF-057** | Marcar os no-shows com motivo de cancelamento/aviso na base, fora das variáveis do modelo | #24 | `src/noshow/features.py::add_label_quality` | `tests/test_features.py::test_falta_avisada_marca_so_no_show_com_motivo_de_cancelamento` | #27 |
+| **RF-058** | Excluir esses registros apenas do treino | #24 | `src/noshow/registry.py::run`<br>`src/noshow/registry.py::_fit_recalibrado` | `tests/test_registry.py::test_recalibracao_com_janela_roda_ponta_a_ponta`<br>`tests/test_operational.py::test_run_origins_ponta_a_ponta` | #27 |
+| **RF-059** | Avaliar no teste com o rótulo original, para comparar com a v7 | #24 | `src/noshow/registry.py::run` | notebook 05_experimento_v8 §3 (comparação pareada com a v7) | #27 |
+| **RF-060** | Várias origens temporais (treino com o passado, teste nos 6 meses seguintes) | #25 | `src/noshow/operational.py::rolling_origins`<br>`src/noshow/operational.py::run_origins` | `tests/test_operational.py::test_origens_treinam_so_com_o_passado`<br>`tests/test_operational.py::test_run_origins_ponta_a_ponta` | #27 |
+| **RF-061** | Comparar a linha de base com a melhor configuração da fase 7 | #25 | `notebooks/06_avaliacao_operacional.ipynb` | execução completa do notebook | #27 |
+| **RF-062** | Faltas detectadas e precisão para volumes de alerta fixos | #25 | `src/noshow/operational.py::decision_table` | `tests/test_operational.py::test_tabela_de_decisao` | #27 |
+| **RF-063** | Desempenho por subgrupo (faixa etária, especialidade, histórico, qualidade do ID) | #25 | `src/noshow/operational.py::subgroup_auc` | `tests/test_operational.py::test_auc_por_subgrupo` | #27 |
+| **CA-008** | Numeração global única: `RF-NNN` (funcional), `RNF-NNN` (não funcional) e `CA-NNN` (critério de tarefa técnica) | #26 | `requisitos.yml` | scripts/rastreabilidade.py valida unicidade e sequência | #27 |
+| **CA-009** | Cada requisito aponta implementação, verificação (teste automatizado ou notebook) e PR de entrega | #26 | `requisitos.yml`<br>`REQUISITOS.md` | scripts/rastreabilidade.py valida campos e testes citados | #27 |
+| **CA-010** | Cada cenário de aceite indica os requisitos que verifica | #26 | `requisitos.yml (cenarios)` | scripts/rastreabilidade.py valida que os ids citados existem na issue | #27 |
+| **CA-011** | Fonte única versionada (`requisitos.yml`) que gera a matriz `REQUISITOS.md` e sincroniza as issues, inclusive as fechadas | #26 | `scripts/rastreabilidade.py` | `tests/test_rastreabilidade.py::test_rastreabilidade_valida_a_fonte_unica` | #27 |
