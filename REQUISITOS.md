@@ -2,7 +2,7 @@
 
 Gerada por `scripts/rastreabilidade.py` a partir de `requisitos.yml` (fonte única). Não edite à mão.
 
-**88 itens** · 78 entregues · 10 em andamento · **44 com teste automatizado** (50%); os demais são verificados por execução de notebook ou revisão.
+**88 itens** · 88 entregues · 0 em andamento · **44 com teste automatizado** (50%); os demais são verificados por execução de notebook ou revisão.
 
 Prefixos: `RF` funcional · `RNF` não funcional · `CA` critério de tarefa técnica.
 
@@ -86,13 +86,13 @@ Prefixos: `RF` funcional · `RNF` não funcional · `CA` critério de tarefa té
 | **CA-009** | Cada requisito aponta implementação, verificação (teste automatizado ou notebook) e PR de entrega | #26 | `requisitos.yml`<br>`REQUISITOS.md` | scripts/rastreabilidade.py valida campos e testes citados | #27 |
 | **CA-010** | Cada cenário de aceite indica os requisitos que verifica | #26 | `requisitos.yml (cenarios)` | scripts/rastreabilidade.py valida que os ids citados existem na issue | #27 |
 | **CA-011** | Fonte única versionada (`requisitos.yml`) que gera a matriz `REQUISITOS.md` e sincroniza as issues, inclusive as fechadas | #26 | `scripts/rastreabilidade.py` | `tests/test_rastreabilidade.py::test_rastreabilidade_valida_a_fonte_unica` | #27 |
-| **RF-064** | Métricas por origem restritas a pacientes com ID (exato e exato + aproximado) | #28 | `src/noshow/operational.py::auc_by_origin`<br>`notebooks/06_avaliacao_operacional.ipynb §4` | `tests/test_operational.py::test_auc_por_origem_nao_mistura_periodos` | em andamento |
-| **RF-065** | Faltas alcançadas por volume de alertas em cada cenário | #28 | `src/noshow/operational.py::decision_by_origin`<br>`notebooks/06_avaliacao_operacional.ipynb §4` | `tests/test_operational.py::test_decisao_por_origem_alerta_dentro_do_periodo` | em andamento |
-| **RF-066** | Ressalva explícita de que o recorte é uma aproximação (sem ID concentrado em 2021–2022) | #28 | `notebooks/06_avaliacao_operacional.ipynb §4` | revisão do notebook | em andamento |
-| **RF-067** | Curva de aprendizado por paciente: ROC-AUC por número de consultas anteriores, dentro de cada origem | #29 | `src/noshow/operational.py::auc_by_origin`<br>`notebooks/06_avaliacao_operacional.ipynb §5` | `tests/test_operational.py::test_auc_por_origem_nao_mistura_periodos`<br>notebook 06_avaliacao_operacional §5 | em andamento |
-| **RF-068** | Tempo até o paciente acumular histórico (dias até a 5ª consulta) | #29 | `notebooks/06_avaliacao_operacional.ipynb §5` | execução completa do notebook | em andamento |
-| **RF-069** | Efeito do volume de dados no modelo ao longo das origens | #29 | `notebooks/06_avaliacao_operacional.ipynb §5` | execução completa do notebook | em andamento |
-| **RNF-005** | Recomendação para produção: registrar intervenções e manter grupo de controle, para que a retroalimentação não aprenda o efeito do próprio lembrete | #29 | `notebooks/06_avaliacao_operacional.ipynb §5` | revisão do notebook | em andamento |
-| **RF-070** | Ligação por lugar na agenda (dia da semana, horário, especialidade, gênero, acompanhante) com votos, exclusão de conflitos e propagação | #30 | `src/noshow/linkage.py::link_by_schedule`<br>`src/noshow/linkage.py::schedule_key` | `tests/test_linkage.py::test_liga_quando_um_unico_paciente_ocupa_o_horario_nas_semanas_vizinhas`<br>`tests/test_linkage.py::test_nao_liga_quando_o_horario_e_dividido_ou_o_candidato_ja_esta_no_dia` | em andamento |
-| **RF-071** | Validação escondendo o ID de pacientes conhecidos (precisão × cobertura) | #30 | `src/noshow/linkage.py::mask_windows`<br>`src/noshow/linkage.py::validate_linkage` | `tests/test_linkage.py::test_validacao_mede_cobertura_e_precisao`<br>`tests/test_linkage.py::test_mascara_esconde_janelas_de_uma_fracao_dos_pacientes` | em andamento |
-| **RF-072** | Notebook com as regras testadas e a decisão de não aplicar | #30 | `notebooks/07_ligacao_por_agenda.ipynb` | execução completa do notebook | em andamento |
+| **RF-064** | Métricas por origem restritas a pacientes com ID (exato e exato + aproximado) | #28 | `src/noshow/operational.py::auc_by_origin`<br>`notebooks/06_avaliacao_operacional.ipynb §4` | `tests/test_operational.py::test_auc_por_origem_nao_mistura_periodos` | #31 |
+| **RF-065** | Faltas alcançadas por volume de alertas em cada cenário | #28 | `src/noshow/operational.py::decision_by_origin`<br>`notebooks/06_avaliacao_operacional.ipynb §4` | `tests/test_operational.py::test_decisao_por_origem_alerta_dentro_do_periodo` | #31 |
+| **RF-066** | Ressalva explícita de que o recorte é uma aproximação (sem ID concentrado em 2021–2022) | #28 | `notebooks/06_avaliacao_operacional.ipynb §4` | revisão do notebook | #31 |
+| **RF-067** | Curva de aprendizado por paciente: ROC-AUC por número de consultas anteriores, dentro de cada origem | #29 | `src/noshow/operational.py::auc_by_origin`<br>`notebooks/06_avaliacao_operacional.ipynb §5` | `tests/test_operational.py::test_auc_por_origem_nao_mistura_periodos`<br>notebook 06_avaliacao_operacional §5 | #31 |
+| **RF-068** | Tempo até o paciente acumular histórico (dias até a 5ª consulta) | #29 | `notebooks/06_avaliacao_operacional.ipynb §5` | execução completa do notebook | #31 |
+| **RF-069** | Efeito do volume de dados no modelo ao longo das origens | #29 | `notebooks/06_avaliacao_operacional.ipynb §5` | execução completa do notebook | #31 |
+| **RNF-005** | Recomendação para produção: registrar intervenções e manter grupo de controle, para que a retroalimentação não aprenda o efeito do próprio lembrete | #29 | `notebooks/06_avaliacao_operacional.ipynb §5` | revisão do notebook | #31 |
+| **RF-070** | Ligação por lugar na agenda (dia da semana, horário, especialidade, gênero, acompanhante) com votos, exclusão de conflitos e propagação | #30 | `src/noshow/linkage.py::link_by_schedule`<br>`src/noshow/linkage.py::schedule_key` | `tests/test_linkage.py::test_liga_quando_um_unico_paciente_ocupa_o_horario_nas_semanas_vizinhas`<br>`tests/test_linkage.py::test_nao_liga_quando_o_horario_e_dividido_ou_o_candidato_ja_esta_no_dia` | #31 |
+| **RF-071** | Validação escondendo o ID de pacientes conhecidos (precisão × cobertura) | #30 | `src/noshow/linkage.py::mask_windows`<br>`src/noshow/linkage.py::validate_linkage` | `tests/test_linkage.py::test_validacao_mede_cobertura_e_precisao`<br>`tests/test_linkage.py::test_mascara_esconde_janelas_de_uma_fracao_dos_pacientes` | #31 |
+| **RF-072** | Notebook com as regras testadas e a decisão de não aplicar | #30 | `notebooks/07_ligacao_por_agenda.ipynb` | execução completa do notebook | #31 |
