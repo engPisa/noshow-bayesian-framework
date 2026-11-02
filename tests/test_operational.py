@@ -49,3 +49,21 @@ def test_run_origins_ponta_a_ponta():
     assert M.roc_auc.between(0, 1).all() and P.p.between(0, 1).all()
     assert (M.groupby(["origem", "config"]).n_treino.first().loc[:, "completo"]
             < M.groupby(["origem", "config"]).n_treino.first().loc[:, "simples"]).all()  # rótulo limpo tira linhas
+
+
+def test_auc_por_origem_nao_mistura_periodos():
+    from noshow.operational import auc_by_origin
+    # dentro de cada origem a ordenação é perfeita; juntando as origens, o nível diferente a estragaria
+    s = pd.DataFrame({"origem": ["a"] * 4 + ["b"] * 4, "y": [0, 0, 1, 1] * 2,
+                      "p": [0.1, 0.2, 0.3, 0.4, 0.6, 0.7, 0.8, 0.9]})
+    assert auc_by_origin(s, minimo=1).loc["todos", "roc_auc"] == 1.0
+    g = auc_by_origin(s, grupos=pd.Series(["x", "x", "x", "x", "y", "y", "y", "y"]), minimo=1)
+    assert g.loc["x", "origens"] == 1 and g.loc["y", "n"] == 4
+
+
+def test_decisao_por_origem_alerta_dentro_do_periodo():
+    from noshow.operational import decision_by_origin
+    s = pd.DataFrame({"origem": ["a"] * 10 + ["b"] * 10, "y": ([1] + [0] * 9) * 2,
+                      "p": list(np.linspace(0.9, 0.1, 10)) + list(np.linspace(0.09, 0.01, 10))})
+    t = decision_by_origin(s, volumes=(0.1,))
+    assert t.loc[0.1, "recall"] == 1.0                                # cada período alerta o seu 1º colocado
