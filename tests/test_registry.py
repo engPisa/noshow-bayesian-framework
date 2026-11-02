@@ -48,8 +48,13 @@ def test_recalibracao_com_janela_roda_ponta_a_ponta():
     X = pd.DataFrame({"cat": rng.choice(["a", "b"], n), "x": rng.normal(size=n) + y})
     tr, te = np.arange(600), np.arange(600, n)
     internas = inner_splits(datas.iloc[tr], y[tr], np.arange(600), "temporal")
-    for janela in (None, 6):
+    valido = rng.random(n) > 0.05
+    for janela, ajuste, val in ((None, None, None), (6, None, None), (None, {"meses": 3, "minimo": 50}, valido)):
         res = _fit_recalibrado(base, X, y, tr, te, ["cat"], ["x"], internas, n_trials=2, verbose=False,
-                               janela_meses=janela)
+                               janela_meses=janela, ajuste_nivel=ajuste, valido=val)
         assert set(res) == set(MODELOS)
-        assert all(len(p) == len(te) and np.isfinite(p).all() for p, _ in res.values())
+        assert all(len(p) == len(te) and np.isfinite(p).all() and (p > 0).all() and (p < 1).all()
+                   for p, _ in res.values())
+        if ajuste:
+            blocos = res["RB (BIC)"][1]["mantos_por_trimestre"]
+            assert all({"prev_treino", "prev_recente"} <= set(b) for b in blocos)
