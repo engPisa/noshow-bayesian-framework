@@ -23,6 +23,7 @@ src/noshow/          o framework
   benchmark.py         divisões 70/30, regressão logística, LightGBM (Optuna) e bootstrap por paciente
   registry.py          registro dos experimentos 70/30 (v1, v2, v3, ...) e geração das bases de modelagem
   operational.py       avaliação com várias origens no tempo, métrica de decisão e subgrupos
+  linkage.py           ligação de pacientes pela agenda semanal (resultado negativo documentado)
 notebooks/
   00_eda.ipynb                  análise exploratória (formato do desafio de EDA)
   01_diagnostico.ipynb          qualidade, vazamento e estrutura de validação
@@ -30,7 +31,8 @@ notebooks/
   03_rede_bayesiana.ipynb       estrutura, Manto de Markov e H2
   04_experimentos.ipynb         dados brutos × framework (H1/H3), validação cruzada e temporal
   05_experimento_vN.ipynb       um notebook por experimento 70/30 (agrupado e temporal)
-  06_avaliacao_operacional.ipynb  7 origens no tempo, faltas alcançadas por volume de alertas e subgrupos
+  06_avaliacao_operacional.ipynb  7 origens no tempo, alertas, subgrupos, cenário com ID e retroalimentação
+  07_ligacao_por_agenda.ipynb   tentativa de reconstruir o ID pela agenda: validação e decisão de não aplicar
 scripts/run_h3.py    calcula os experimentos do notebook 04 (~25 min)
 scripts/novo_experimento.py  gera o notebook de um experimento registrado
 scripts/rastreabilidade.py   valida requisitos.yml, gera REQUISITOS.md e sincroniza as issues
@@ -56,7 +58,7 @@ A base de dados **não é versionada**. Coloque o arquivo `medical-appointments-
 antes de executar os notebooks.
 
 No VS Code/Jupyter, selecione o kernel **"TCC no-show (.venv)"**. Os notebooks devem ser executados em ordem
-(00 → 06); o 02 gera a base usada pelo 03 e pelo 04, e as bases dos experimentos 05/06 são geradas automaticamente
+(00 → 07); o 02 gera a base usada pelo 03 e pelo 04, e as bases dos experimentos 05/06 são geradas automaticamente
 na primeira execução (`noshow.registry.build_bases`). O notebook 04 carrega os resultados de
 `resultados/`; para recalculá-los: `PYTHONHASHSEED=0 .venv/bin/python scripts/run_h3.py`.
 
