@@ -424,3 +424,59 @@ issues:
         texto: Fonte única versionada (`requisitos.yml`) que gera a matriz `REQUISITOS.md` e sincroniza as issues, inclusive as fechadas
         implementacao: [scripts/rastreabilidade.py]
         verificacao: [tests::test_rastreabilidade_valida_a_fonte_unica]
+  28:
+    titulo: Cenário com ID como proxy de produção
+    pr: null
+    cenarios: {1: [RF-064, RF-065]}
+    requisitos:
+      - id: RF-064
+        texto: Métricas por origem restritas a pacientes com ID (exato e exato + aproximado)
+        implementacao: [src/noshow/operational.py::auc_by_origin, notebooks/06_avaliacao_operacional.ipynb §4]
+        verificacao: [tests::test_auc_por_origem_nao_mistura_periodos]
+      - id: RF-065
+        texto: Faltas alcançadas por volume de alertas em cada cenário
+        implementacao: [src/noshow/operational.py::decision_by_origin, notebooks/06_avaliacao_operacional.ipynb §4]
+        verificacao: [tests::test_decisao_por_origem_alerta_dentro_do_periodo]
+      - id: RF-066
+        texto: Ressalva explícita de que o recorte é uma aproximação (sem ID concentrado em 2021–2022)
+        implementacao: [notebooks/06_avaliacao_operacional.ipynb §4]
+        verificacao: [revisão do notebook]
+  29:
+    titulo: Premissa da retroalimentação medida
+    pr: null
+    cenarios: {1: [RF-067]}
+    requisitos:
+      - id: RF-067
+        texto: "Curva de aprendizado por paciente: ROC-AUC por número de consultas anteriores, dentro de cada origem"
+        implementacao: [src/noshow/operational.py::auc_by_origin, notebooks/06_avaliacao_operacional.ipynb §5]
+        verificacao: [tests::test_auc_por_origem_nao_mistura_periodos, notebook 06_avaliacao_operacional §5]
+      - id: RF-068
+        texto: Tempo até o paciente acumular histórico (dias até a 5ª consulta)
+        implementacao: [notebooks/06_avaliacao_operacional.ipynb §5]
+        verificacao: [execução completa do notebook]
+      - id: RF-069
+        texto: Efeito do volume de dados no modelo ao longo das origens
+        implementacao: [notebooks/06_avaliacao_operacional.ipynb §5]
+        verificacao: [execução completa do notebook]
+      - id: RNF-005
+        texto: "Recomendação para produção: registrar intervenções e manter grupo de controle, para que a retroalimentação não aprenda o efeito do próprio lembrete"
+        implementacao: [notebooks/06_avaliacao_operacional.ipynb §5]
+        verificacao: [revisão do notebook]
+  30:
+    titulo: Ligação de pacientes pela agenda (resultado negativo documentado)
+    pr: null
+    cenarios: {1: [RF-071]}
+    requisitos:
+      - id: RF-070
+        texto: Ligação por lugar na agenda (dia da semana, horário, especialidade, gênero, acompanhante) com votos, exclusão de conflitos e propagação
+        implementacao: [src/noshow/linkage.py::link_by_schedule, src/noshow/linkage.py::schedule_key]
+        verificacao: [tests::test_liga_quando_um_unico_paciente_ocupa_o_horario_nas_semanas_vizinhas,
+                      tests::test_nao_liga_quando_o_horario_e_dividido_ou_o_candidato_ja_esta_no_dia]
+      - id: RF-071
+        texto: Validação escondendo o ID de pacientes conhecidos (precisão × cobertura)
+        implementacao: [src/noshow/linkage.py::mask_windows, src/noshow/linkage.py::validate_linkage]
+        verificacao: [tests::test_validacao_mede_cobertura_e_precisao, tests::test_mascara_esconde_janelas_de_uma_fracao_dos_pacientes]
+      - id: RF-072
+        texto: Notebook com as regras testadas e a decisão de não aplicar
+        implementacao: [notebooks/07_ligacao_por_agenda.ipynb]
+        verificacao: [execução completa do notebook]
