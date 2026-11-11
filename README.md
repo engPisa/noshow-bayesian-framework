@@ -30,9 +30,11 @@ notebooks/
   02_engenharia_variaveis.ipynb variáveis candidatas → data/processed/features.parquet
   03_rede_bayesiana.ipynb       estrutura, Manto de Markov e H2
   04_experimentos.ipynb         dados brutos × framework (H1/H3), validação cruzada e temporal
-  05_experimento_vN.ipynb       um notebook por experimento 70/30 (agrupado e temporal)
-  06_avaliacao_operacional.ipynb  7 origens no tempo, alertas, subgrupos, cenário com ID e retroalimentação
-  07_ligacao_por_agenda.ipynb   tentativa de reconstruir o ID pela agenda: validação e decisão de não aplicar
+  08_validacao_sensibilidade_e_base_externa.ipynb  subgrupos sem ID, validação externa (OpenML 43439) e teste de recuperação
+  historico/                    tentativas exploratórias anteriores ao protocolo final; não sustentam os resultados do artigo
+    05_experimento_vN.ipynb       um notebook por experimento 70/30 (agrupado e temporal)
+    06_avaliacao_operacional.ipynb  7 origens no tempo, alertas, subgrupos, cenário com ID e retroalimentação
+    07_ligacao_por_agenda.ipynb   tentativa de reconstruir o ID pela agenda: validação e decisão de não aplicar
 scripts/run_h3.py    calcula os experimentos revisados do notebook 04, com validação interna
 scripts/audit_article_splits.py  verifica sobreposição externa/interna de registros
 scripts/compare_article.py  compara a versão anterior e a ajustada nos mesmos folds
@@ -60,7 +62,7 @@ A base de dados **não é versionada**. Coloque o arquivo `medical-appointments-
 antes de executar os notebooks.
 
 No VS Code/Jupyter, selecione o kernel **"TCC no-show (.venv)"**. Os notebooks devem ser executados em ordem
-(00 → 07); o 02 gera a base usada pelo 03 e pelo 04, e as bases dos experimentos 05/06 são geradas automaticamente
+(00 → 04 e 08); o 02 gera a base usada pelo 03 e pelo 04. Os notebooks de `historico/` podem ser executados depois; as bases dos experimentos 05/06 são geradas automaticamente
 na primeira execução (`noshow.registry.build_bases`). O notebook 04 carrega os resultados de
 `resultados/artigo_sem_sobreposicao/completo/`; para recalculá-los: `PYTHONHASHSEED=0 .venv/bin/python scripts/run_h3.py`.
 Os CSVs antigos da raiz de `resultados/` permanecem como histórico do protocolo anterior.
@@ -71,7 +73,7 @@ Cada experimento 70/30 tem o próprio notebook, e todos usam as mesmas divisões
 pareadas.
 
 1. Acrescente uma entrada `"vN"` em `EXPERIMENTOS` (`src/noshow/registry.py`): título, o que muda, base e variáveis.
-2. `.venv/bin/python scripts/novo_experimento.py vN` → cria `notebooks/05_experimento_vN.ipynb`.
+2. `.venv/bin/python scripts/novo_experimento.py vN` → cria `notebooks/historico/05_experimento_vN.ipynb`.
 3. Execute o notebook: ele roda o experimento, salva em `resultados/experimentos/vN/` e compara com a versão
    anterior.
 4. Escreva a análise em `resultados/experimentos/vN/registro.md`, rode o passo 2 de novo e reexecute o notebook.

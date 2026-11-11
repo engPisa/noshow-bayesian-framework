@@ -1,4 +1,4 @@
-"""Registro de experimentos 70/30. Cada versão vira um notebook `notebooks/05_experimento_vN.ipynb`.
+"""Registro de experimentos 70/30. Cada versão vira um notebook `notebooks/historico/05_experimento_vN.ipynb`.
 
 Para um novo experimento: acrescente uma entrada em EXPERIMENTOS (descrição, o que mudou, base e variáveis)
 e crie o notebook da versão a partir do anterior. `compara_com` indica a versão-base quando ela não é a
