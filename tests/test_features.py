@@ -86,6 +86,12 @@ def test_discretizer_unifica_cortes_repetidos():
     assert len(disc.edges_["x"]) < 4
 
 
+def test_discretizer_coluna_sem_valores_no_treino():
+    disc = Discretizer(columns=["x"]).fit(pd.DataFrame({"x": [np.nan, np.nan]}))
+    assert disc.edges_["x"].size == 0
+    assert disc.transform(pd.DataFrame({"x": [np.nan, 5.0]})).x.tolist() == ["ausente", "<=inf"]
+
+
 def test_fix_weather_preenche_temperatura_e_mantem_chuva_ausente():
     om = pd.DataFrame({"average_temp_day": [25.0], "max_temp_day": [30.0]},
                       index=pd.to_datetime(["2022-02-01"]))

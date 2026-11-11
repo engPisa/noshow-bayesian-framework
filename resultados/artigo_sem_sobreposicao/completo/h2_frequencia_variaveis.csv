@@ -1,0 +1,6 @@
+critério,manto,folds,frequencia
+AIC,mes,15,1.0
+AIC,periodo,15,1.0
+AIC,taxa_faltas_anteriores,15,1.0
+BIC,periodo,15,1.0
+BIC,taxa_faltas_anteriores,15,1.0

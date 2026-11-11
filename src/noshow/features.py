@@ -320,9 +320,11 @@ class Discretizer(BaseEstimator, TransformerMixin):
         self.n_bins = n_bins
 
     def fit(self, X: pd.DataFrame, y=None):
+        if self.n_bins < 2:
+            raise ValueError("n_bins deve ser pelo menos 2.")
         cols = self.columns if self.columns is not None else list(X.columns)
         qs = np.linspace(0, 1, self.n_bins + 1)[1:-1]
-        self.edges_ = {c: np.unique(X[c].dropna().quantile(qs).to_numpy()) for c in cols}
+        self.edges_ = {c: np.unique(X[c].dropna().quantile(qs).dropna().to_numpy()) for c in cols}
         self.labels_ = {}
         for c, edges in self.edges_.items():
             bins = np.concatenate([[-np.inf], edges, [np.inf]])

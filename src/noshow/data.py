@@ -31,7 +31,10 @@ def load_raw(path: Path = RAW_PATH) -> pd.DataFrame:
     for col in DATE_COLS:
         df[col] = pd.to_datetime(df[col], format="%d/%m/%Y", errors="coerce")
 
-    df[TARGET] = (df[TARGET] == "yes").astype(int)
+    invalid = ~df[TARGET].isin(["yes", "no"])
+    if invalid.any():
+        raise ValueError(f"no_show ausente ou inválido em {int(invalid.sum())} registros; esperado 'yes'/'no'.")
+    df[TARGET] = df[TARGET].map({"yes": 1, "no": 0}).astype(int)
     df["appointment_month"] = pd.Categorical(df["appointment_month"], categories=MONTH_ORDER, ordered=True)
     return df
 

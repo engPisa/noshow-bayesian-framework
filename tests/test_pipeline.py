@@ -61,3 +61,72 @@ def test_classification_report_at():
     r = classification_report_at(y, p, 0.5)
     assert r["recall"] == 0.5 and r["precision"] == 0.5 and r["accuracy"] == 0.6
     assert r["pct_alertas"] == pytest.approx(0.4)
+
+
+def test_correcao_da_priori_recupera_prevalencia_e_preserva_ranking():
+    from noshow.pipeline import restore_class_prior
+    p = np.array([0.1, 0.5, 0.9])
+    corrected = restore_class_prior(p, original_rate=0.1, sampled_rate=0.5)
+    assert corrected[1] == pytest.approx(0.1)
+    assert np.array_equal(np.argsort(p), np.argsort(corrected))
+    np.testing.assert_allclose(restore_class_prior(p, 0.1, 0.1), p)
+
+
+def test_sinteticos_preservam_relacoes_de_idade_e_clima():
+    from noshow.weather import rain_category, heat_category
+    X, y = _treino()
+    X = X.rename(columns={"x": "max_temp_day", "z": "max_rain_day"})
+    X["heat_intensity"] = heat_category(X.max_temp_day).fillna("ausente")
+    X["rain_intensity"] = rain_category(X.max_rain_day).fillna("ausente")
+    X["idade_consulta"] = np.linspace(1, 90, len(X))
+    X["faixa_etaria"] = pd.cut(X.idade_consulta, [0, 6, 12, 18, 60, np.inf], right=False,
+                               labels=["0-5", "6-11", "12-17", "18-59", "60+"]).astype(str)
+    cat = ["cat", "heat_intensity", "rain_intensity", "faixa_etaria"]
+    cont = ["max_temp_day", "max_rain_day", "idade_consulta"]
+    out, _ = smotenc_resample(X, y, cat, cont, repair_derived=True)
+    pd.testing.assert_frame_equal(out.iloc[:len(X)].reset_index(drop=True), X[cat + cont], check_dtype=False)
+    synthetic = out.iloc[len(X):]
+    assert synthetic.rain_intensity.tolist() == rain_category(synthetic.max_rain_day).fillna("ausente").tolist()
+    assert synthetic.heat_intensity.tolist() == heat_category(synthetic.max_temp_day).fillna("ausente").tolist()
+    expected = pd.cut(synthetic.idade_consulta, [0, 6, 12, 18, 60, np.inf], right=False,
+                      labels=["0-5", "6-11", "12-17", "18-59", "60+"]).astype(str)
+    assert synthetic.faixa_etaria.tolist() == expected.tolist()
+
+
+def test_coluna_totalmente_ausente_nao_impede_smotenc():
+    X, y = _treino()
+    X["z"] = np.nan
+    out, _ = smotenc_resample(X, y, ["cat"], ["x", "z"])
+    assert out.z.isna().all()
+
+
+def test_historico_sintetico_recalcula_razao_e_preserva_reais():
+    X, y = _treino()
+    X = X.rename(columns={"x": "n_agendamentos_anteriores", "z": "n_faltas_anteriores"})
+    X.n_agendamentos_anteriores = np.arange(len(X), dtype=float)
+    X.n_faltas_anteriores = np.floor(X.n_agendamentos_anteriores * 0.2)
+    X.loc[:10, ["n_agendamentos_anteriores", "n_faltas_anteriores"]] = np.nan
+    X["taxa_faltas_anteriores"] = X.n_faltas_anteriores / X.n_agendamentos_anteriores.where(X.n_agendamentos_anteriores > 0)
+    cont = ["n_agendamentos_anteriores", "n_faltas_anteriores", "taxa_faltas_anteriores"]
+    out, _ = smotenc_resample(X, y, ["cat"], cont, coherent_history=True, sampling_strategy=0.5)
+    pd.testing.assert_frame_equal(out.iloc[:len(X)], X[["cat"] + cont], check_dtype=False)
+    synth = out.iloc[len(X):]
+    expected = synth.n_faltas_anteriores / synth.n_agendamentos_anteriores.where(synth.n_agendamentos_anteriores > 0)
+    np.testing.assert_allclose(synth.taxa_faltas_anteriores, expected, equal_nan=True)
+    assert synth.taxa_faltas_anteriores.dropna().between(0, 1).all()
+    # Alterar a razão redundante não deve mudar os vizinhos nem as contagens sintéticas.
+    changed = X.assign(taxa_faltas_anteriores=np.linspace(0, 1, len(X)))
+    other, _ = smotenc_resample(changed, y, ["cat"], cont, coherent_history=True, sampling_strategy=0.5)
+    np.testing.assert_allclose(synth[cont[:2]], other.iloc[len(X):][cont[:2]], equal_nan=True)
+
+
+def test_orcamento_fixo_independe_da_ordem_dos_empates():
+    from noshow.pipeline import classification_report_budget
+    y, p = np.array([1, 0, 1, 0]), np.array([0.8, 0.8, 0.8, 0.1])
+    a = classification_report_budget(y, p, fraction=0.25)
+    idx = [2, 3, 1, 0]
+    b = classification_report_budget(y[idx], p[idx], fraction=0.25)
+    assert a == b
+    assert a["n_alertas"] == 1
+    assert a["precision"] == pytest.approx(2 / 3)
+    assert a["recall"] == pytest.approx(1 / 3)

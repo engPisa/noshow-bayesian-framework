@@ -1,0 +1,54 @@
+{
+  "settings": {
+    "cv_scoring": "bic-d",
+    "perfil": "ajustado",
+    "grouping": "componentes de paciente reconstruído e campos originais iguais, sem alvo/motivo",
+    "comparison_protocol": "/Users/natankainak/TCC/resultados/artigo_sem_sobreposicao/comparacao/protocolo.json"
+  },
+  "pilot": false,
+  "provenance": {
+    "source_sha256": {
+      "src/noshow/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "src/noshow/bayes.py": "0d6c999908dd84a9b2ac501a8575206ffb2bc05d23b28ca2f66b4342d81f2a6c",
+      "src/noshow/benchmark.py": "8436ca99a6ed7e7f0630d479fd4cbd0e3e53524208933695c20a70bd5f3eccec",
+      "src/noshow/data.py": "c7d4fd14061cc995107cb8e1c6edf820109db1152e3d172aabd01a579b3a83de",
+      "src/noshow/evaluation.py": "2ffb840ec1d5140cadd27ceb098812413b78001d5f5c33de30fe55b591bb0a3f",
+      "src/noshow/experiments.py": "dfeb349a06b84bbe322fb04c083950f439b97b653175ab4b998c30e40c5720ae",
+      "src/noshow/features.py": "3695c5dbf6f16d0db9298363899b6939130141937ca4089be06fa3d4d7ad5afc",
+      "src/noshow/linkage.py": "5ee3054d72c8d4c08e8f527a76938e99182408a972e0f7b42f24495fa6d7e5b1",
+      "src/noshow/operational.py": "25201b0d16f6e200ccad1f55612954876402780fec2e2c46c3d87b6756ff6262",
+      "src/noshow/pipeline.py": "534ab95954501014811a2a0bfb20738e6c1a71d050127f105baeddc2964824c5",
+      "src/noshow/preprocessing.py": "95e2f78455650e9e940d78439eb01932c785bb846eeb1b81adee2347b2a3a91a",
+      "src/noshow/registry.py": "b68199b3206e875ac5d3b079cc5a5389b0c620cfd71889e89dc2bb5c280617fe",
+      "src/noshow/weather.py": "b43b11ec6c6dd6651c583b77a1920c8428f2e9903c0aa7ff5363c1e00f1381ea",
+      "scripts/compare_article.py": "4980ba33c9b48f0d1b38349254c4604697c77c6ebe0285a56516378ed61f0073",
+      "scripts/run_h3.py": "886bee6ebff790e0bab9bbfe64d492e83c4266ae4009d5b0d55b95d674f8b07f",
+      "scripts/audit_article_splits.py": "197511f9ebb90a6579e16608d741d49a341c39366b2fe6528e0d953f594ac653"
+    },
+    "data_sha256": "903f30aa008c478dd6451550b53c2bf937653f28763ea288e43f5e99c536cbdf",
+    "external_sha256": {
+      "openmeteo_itajai_diario.csv": "d5d4be5a97b755b0fc6eb6d9336cba88dfae7dd498b4a2a8590608085dd441e7",
+      "validacao_clima_base_x_openmeteo.csv": "f94f3139486df90cccd9711b32e36e22c92f6534e7c964a97dbc03ecf0afdd0d"
+    },
+    "python": "3.11.15",
+    "packages": {
+      "numpy": "2.4.6",
+      "pandas": "3.1.1",
+      "scikit-learn": "1.9.1",
+      "imbalanced-learn": "0.14.2",
+      "pgmpy": "1.1.2"
+    }
+  },
+  "stages": {
+    "cv": {
+      "complete": true,
+      "rows": 105,
+      "file": "h3_validacao_cruzada.csv"
+    },
+    "temporal": {
+      "complete": true,
+      "rows": 14,
+      "file": "h3_validacao_temporal.csv"
+    }
+  }
+}

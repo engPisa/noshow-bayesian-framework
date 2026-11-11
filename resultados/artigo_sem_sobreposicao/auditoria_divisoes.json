@@ -1,0 +1,12 @@
+{
+  "linhas": 49593,
+  "grupos_anteriores": 12123,
+  "grupos_corrigidos": 10177,
+  "assinatura": "todos os campos originais exceto no_show e no_show_reason; inclui data/hora",
+  "linhas_removidas": 0,
+  "folds_externos": 15,
+  "holdouts_internos": 15,
+  "sobreposicao_corrigida_externa": 0,
+  "sobreposicao_corrigida_interna": 0,
+  "pacientes_identificados_compartilhados": 0
+}
