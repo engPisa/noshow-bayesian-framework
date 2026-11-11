@@ -2,7 +2,7 @@
 
 Uso: .venv/bin/python scripts/novo_experimento.py vN
 
-Cria `notebooks/05_experimento_vN.ipynb`. Depois de executar o notebook, escreva a análise em
+Cria `notebooks/historico/05_experimento_vN.ipynb`. Depois de executar o notebook, escreva a análise em
 `resultados/experimentos/vN/registro.md` e rode o script de novo para incluí-la na seção "Registro do experimento".
 
 Atenção: o notebook é recriado sem saídas. Reexecute-o depois (com RECALCULAR = False ele só recarrega os
@@ -16,7 +16,7 @@ import nbformat as nbf
 from noshow.registry import EXPERIMENTOS, RAIZ, RESULTADOS
 
 versao = sys.argv[1]
-saida = RAIZ / "notebooks" / f"05_experimento_{versao}.ipynb"
+saida = RAIZ / "notebooks" / "historico" / f"05_experimento_{versao}.ipynb"
 registro = RESULTADOS / versao / "registro.md"
 conclusao = registro.read_text() if registro.exists() else (
     f"> _Registro pendente: escrever a análise em `resultados/experimentos/{versao}/registro.md`._")
@@ -30,7 +30,7 @@ md = lambda s: cells.append(nbf.v4.new_markdown_cell(s.strip()))
 code = lambda s: cells.append(nbf.v4.new_code_cell(s.strip()))
 
 md(f"""
-# 05 — Experimento {versao}: {cfg['titulo']}
+# 05: Experimento {versao}: {cfg['titulo']}
 
 **O que muda nesta versão:** {cfg['mudanca']}
 
