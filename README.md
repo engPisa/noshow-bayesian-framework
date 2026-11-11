@@ -33,7 +33,9 @@ notebooks/
   05_experimento_vN.ipynb       um notebook por experimento 70/30 (agrupado e temporal)
   06_avaliacao_operacional.ipynb  7 origens no tempo, alertas, subgrupos, cenário com ID e retroalimentação
   07_ligacao_por_agenda.ipynb   tentativa de reconstruir o ID pela agenda: validação e decisão de não aplicar
-scripts/run_h3.py    calcula os experimentos do notebook 04 (~25 min)
+scripts/run_h3.py    calcula os experimentos revisados do notebook 04, com validação interna
+scripts/audit_article_splits.py  verifica sobreposição externa/interna de registros
+scripts/compare_article.py  compara a versão anterior e a ajustada nos mesmos folds
 scripts/novo_experimento.py  gera o notebook de um experimento registrado
 scripts/rastreabilidade.py   valida requisitos.yml, gera REQUISITOS.md e sincroniza as issues
 requisitos.yml       fonte única dos requisitos (RF/RNF/CA) com implementação, verificação e entrega
@@ -60,7 +62,8 @@ antes de executar os notebooks.
 No VS Code/Jupyter, selecione o kernel **"TCC no-show (.venv)"**. Os notebooks devem ser executados em ordem
 (00 → 07); o 02 gera a base usada pelo 03 e pelo 04, e as bases dos experimentos 05/06 são geradas automaticamente
 na primeira execução (`noshow.registry.build_bases`). O notebook 04 carrega os resultados de
-`resultados/`; para recalculá-los: `PYTHONHASHSEED=0 .venv/bin/python scripts/run_h3.py`.
+`resultados/artigo_sem_sobreposicao/completo/`; para recalculá-los: `PYTHONHASHSEED=0 .venv/bin/python scripts/run_h3.py`.
+Os CSVs antigos da raiz de `resultados/` permanecem como histórico do protocolo anterior.
 
 ## Registrar um novo experimento
 

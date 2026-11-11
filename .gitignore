@@ -5,13 +5,22 @@ __pycache__/
 .ipynb_checkpoints/
 .pytest_cache/
 .DS_Store
+.vscode/
 
 # dados: a base não é publicada
 data/raw/
 data/processed/
+data/external/
+medical-appointments-no-show-en.csv
 resultados/experimentos/*/predicoes.parquet
 
 # material local
 referencias/
 docs/
 resultados/avaliacao_operacional/predicoes.parquet
+
+# PDFs e pacotes compilados
+*.pdf
+*.zip
+output/pdf/
+output/

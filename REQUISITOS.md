@@ -43,7 +43,7 @@ Prefixos: `RF` funcional · `RNF` não funcional · `CA` critério de tarefa té
 | **RF-030** | Métricas de matriz de confusão por limiar | #8 | `src/noshow/pipeline.py::classification_report_at` | `tests/test_pipeline.py::test_classification_report_at` | #18 |
 | **RF-031** | 7 configurações × 15 folds agrupados por paciente | #9 | `src/noshow/experiments.py::run_config`<br>`scripts/run_h3.py`<br>`resultados/h3_validacao_cruzada.csv` | notebook 04_experimentos §2 | #18 |
 | **RF-032** | Wilcoxon com correção de Holm | #9 | `notebooks/04_experimentos.ipynb §2` | execução completa do notebook | #18 |
-| **RF-033** | Validação temporal (treino até 2020, teste 2021–2022) | #9 | `scripts/run_h3.py::validacao_temporal`<br>`resultados/h3_validacao_temporal.csv` | notebook 04_experimentos §5 | #18 |
+| **RF-033** | Validação temporal (treino até 2020, teste 2021–2022) | #9 | `scripts/run_h3.py::main`<br>`resultados/h3_validacao_temporal.csv` | notebook 04_experimentos §5 | #18 |
 | **RF-034** | Explicação do efeito do SMOTENC sobre a estrutura da rede | #9 | `notebooks/04_experimentos.ipynb §3` | execução completa do notebook | #18 |
 | **RF-035** | Faltas nas últimas 3/5 consultas, sequência de faltas e taxa em 90 dias | #10 | `src/noshow/features.py::add_recent_history` | `tests/test_features.py::test_historico_recente_sequencia_e_janela_de_90_dias` | #19 |
 | **RF-036** | Taxa de faltas na mesma especialidade e ordem da consulta no dia | #10 | `src/noshow/features.py::add_recent_history` | `tests/test_features.py::test_historico_por_especialidade_e_ordem_no_dia` | #19 |

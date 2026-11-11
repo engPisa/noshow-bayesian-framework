@@ -199,7 +199,7 @@ issues:
         verificacao: [execução completa do notebook]
       - id: RF-033
         texto: Validação temporal (treino até 2020, teste 2021–2022)
-        implementacao: [scripts/run_h3.py::validacao_temporal, resultados/h3_validacao_temporal.csv]
+        implementacao: [scripts/run_h3.py::main, resultados/h3_validacao_temporal.csv]
         verificacao: [notebook 04_experimentos §5]
       - id: RF-034
         texto: Explicação do efeito do SMOTENC sobre a estrutura da rede

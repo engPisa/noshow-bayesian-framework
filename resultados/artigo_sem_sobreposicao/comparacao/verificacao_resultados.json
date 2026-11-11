@@ -1,0 +1,19 @@
+{
+  "resultado": "aprovado",
+  "avaliacoes_h1_h3": 238,
+  "avaliacoes_h2": 105,
+  "folds_externos": 15,
+  "holdouts_internos": 15,
+  "sobreposicao_externa": 0,
+  "sobreposicao_interna": 0,
+  "linhas_preservadas": 49593,
+  "checagens": [
+    "completude",
+    "unicidade",
+    "selecao por AP interna",
+    "metricas finitas",
+    "orcamento identico",
+    "grupos corrigidos",
+    "H2 completa e Manto"
+  ]
+}
