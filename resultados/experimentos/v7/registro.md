@@ -1,3 +1,9 @@
+> **Histórico exploratório (fases 7 e 8).** Este notebook foi produzido com o protocolo anterior, **antes da
+> correção da sobreposição entre treino e teste** (PR #36) e sem a seleção interna de faixas, ESS e balanceamento.
+> Os números e conclusões abaixo registram o processo de desenvolvimento, mas **não sustentam os resultados do
+> artigo**. O protocolo final está nos notebooks `03_rede_bayesiana`, `04_experimentos` e
+> `08_validacao_sensibilidade_e_base_externa`, com resultados em `resultados/artigo_sem_sobreposicao/`.
+
 **Data:** 01/11/2026 · **Base de comparação:** v6 · **Mudança:** 5 variáveis novas: taxa de faltas suavizada
 (Beta-Binomial), taxa ponderada pela recência (meia-vida de 90 dias), primeira consulta e taxas da população por
 especialidade e por cidade
