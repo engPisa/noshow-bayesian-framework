@@ -586,7 +586,7 @@ issues:
         verificacao: [scripts/rastreabilidade.py valida todos os caminhos citados]
   37:
     titulo: "Revisão da fase 9: texto do SMOTENC, histórico das fases 7 e 8 e data/external"
-    pr: null
+    pr: 38
     requisitos:
       - id: CA-015
         texto: Síntese do notebook 04 explicita quando o SMOTENC ajuda, quando não ajuda e que a conclusão anterior foi superada
