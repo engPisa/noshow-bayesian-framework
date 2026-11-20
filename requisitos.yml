@@ -480,3 +480,107 @@ issues:
         texto: Notebook com as regras testadas e a decisão de não aplicar
         implementacao: [notebooks/historico/07_ligacao_por_agenda.ipynb]
         verificacao: [execução completa do notebook]
+  32:
+    titulo: Protocolo sem sobreposição entre treino e teste
+    pr: null
+    cenarios: {1: [RF-073], 2: [RF-074]}
+    requisitos:
+      - id: RF-073
+        texto: Agrupar registros com os mesmos campos originais (exceto alvo e motivo) e pacientes reconstruídos em componentes
+        implementacao: [src/noshow/evaluation.py::record_groups, src/noshow/evaluation.py::patient_groups]
+        verificacao: [tests::test_registros_iguais_sem_id_ficam_juntos_sem_usar_o_desfecho,
+                      tests::test_uniao_preserva_pacientes_e_e_transitiva,
+                      tests::test_grupos_independem_da_ordem_e_do_indice_das_linhas,
+                      tests::test_rejeita_registros_desalinhados_ou_sem_campos_de_entrada]
+      - id: RF-074
+        texto: Auditar a sobreposição externa e interna em todos os folds
+        implementacao: [scripts/audit_article_splits.py::main, resultados/artigo_sem_sobreposicao/auditoria_divisoes.json]
+        verificacao: [tests::test_divisoes_externas_e_internas_nao_separam_registros_iguais,
+                      auditoria com sobreposição zero em 15 folds externos e 15 holdouts internos]
+      - id: RF-075
+        texto: Medir o impacto da correção sobre as métricas
+        implementacao: [resultados/artigo_sem_sobreposicao/impacto_agrupamento_cv.csv]
+        verificacao: [notebook 04_experimentos §6]
+      - id: RF-076
+        texto: Alvo ausente ou inválido gera erro em vez de virar comparecimento
+        implementacao: [src/noshow/data.py::load_raw]
+        verificacao: [tests::test_alvo_invalido_nao_vira_comparecimento]
+  33:
+    titulo: Protocolo ajustado da H1/H3 com seleção interna
+    pr: null
+    cenarios: {1: [RF-077], 2: [RF-080]}
+    requisitos:
+      - id: RF-077
+        texto: Seleção interna de faixas, ESS e razão de balanceamento pela PR-AUC, só com o treino
+        implementacao: [src/noshow/experiments.py::run_config, scripts/run_h3.py::inner_split]
+        verificacao: [tests::test_escolha_de_ess_nao_depende_dos_rotulos_do_teste,
+                      tests::test_busca_de_faixas_e_balanceamento_ignora_rotulos_externos]
+      - id: RF-078
+        texto: Categorias e cidades aprendidas no treino de cada fold
+        implementacao: [src/noshow/preprocessing.py::FoldCategories, src/noshow/experiments.py::prepare_discrete]
+        verificacao: [tests::test_cidades_sao_agrupadas_pelas_frequencias_do_treino,
+                      tests::test_dominio_nao_depende_das_categorias_do_teste,
+                      tests::test_acrescentar_linha_de_teste_nao_altera_predicao_existente]
+      - id: RF-079
+        texto: Registros sintéticos coerentes (histórico recalculado das contagens; idade e clima preservados)
+        implementacao: [src/noshow/pipeline.py::smotenc_resample]
+        verificacao: [tests::test_sinteticos_preservam_relacoes_de_idade_e_clima,
+                      tests::test_historico_sintetico_recalcula_razao_e_preserva_reais,
+                      tests::test_coluna_totalmente_ausente_nao_impede_smotenc]
+      - id: RF-080
+        texto: Correção da priori depois do SMOTENC
+        implementacao: [src/noshow/pipeline.py::restore_class_prior]
+        verificacao: [tests::test_correcao_da_priori_recupera_prevalencia_e_preserva_ranking]
+      - id: RF-081
+        texto: Recall e precisão com orçamento de 10% dos agendamentos e desempate pela esperança
+        implementacao: [src/noshow/pipeline.py::classification_report_budget]
+        verificacao: [tests::test_orcamento_fixo_independe_da_ordem_dos_empates]
+      - id: RF-082
+        texto: Comparação pareada entre os protocolos anterior e ajustado nos mesmos folds
+        implementacao: [scripts/compare_article.py::main, resultados/artigo_sem_sobreposicao/comparacao/comparacao_cv.csv]
+        verificacao: [resultados/artigo_sem_sobreposicao/comparacao/verificacao_resultados.json, notebook 04_experimentos §7]
+      - id: RF-083
+        texto: Notebook 04 revisado com o protocolo ajustado
+        implementacao: [notebooks/04_experimentos.ipynb, resultados/artigo_sem_sobreposicao/completo/h3_validacao_cruzada.csv]
+        verificacao: [resultados/artigo_sem_sobreposicao/04_experimentos_verificacao.json]
+      - id: RF-084
+        texto: H2 reavaliada sem sobreposição (notebook 03)
+        implementacao: [notebooks/03_rede_bayesiana.ipynb, resultados/artigo_sem_sobreposicao/completo/h2_validacao_cruzada.csv]
+        verificacao: [resultados/artigo_sem_sobreposicao/03_rede_bayesiana_verificacao.json]
+      - id: RNF-006
+        texto: "Proveniência: hashes de código, dados e versões em cada protocolo"
+        implementacao: [scripts/compare_article.py::provenance, resultados/artigo_sem_sobreposicao/completo/protocolo.json]
+        verificacao: [revisão dos arquivos de protocolo]
+  34:
+    titulo: Validação de sensibilidade e em base externa
+    pr: null
+    cenarios: {1: [RF-086]}
+    requisitos:
+      - id: RF-085
+        texto: Diagnóstico dos registros sem ID no teste temporal, com IC por bootstrap e lift de AP
+        implementacao: [notebooks/08_validacao_sensibilidade_e_base_externa.ipynb (Parte 1)]
+        verificacao: [execução registrada pelo autor em resultados/validacao_sensibilidade_e_base_externa.csv]
+      - id: RF-086
+        texto: Validação externa na base OpenML 43439 com antecedência, comparando antecedência isolada, regressão logística e RB (BIC/AIC)
+        implementacao: [notebooks/08_validacao_sensibilidade_e_base_externa.ipynb (Parte 2), resultados/validacao_sensibilidade_e_base_externa.csv]
+        verificacao: [execução registrada pelo autor em resultados/validacao_sensibilidade_e_base_externa.csv]
+      - id: RF-087
+        texto: Teste de recuperação estrutural com gerador conhecido, comparado ao oráculo
+        implementacao: [notebooks/08_validacao_sensibilidade_e_base_externa.ipynb (Parte 3)]
+        verificacao: [execução registrada pelo autor em resultados/validacao_sensibilidade_e_base_externa.csv]
+  35:
+    titulo: Separar tentativas exploratórias em notebooks/historico
+    pr: null
+    requisitos:
+      - id: CA-012
+        texto: Notebooks 05–07 em `notebooks/historico/`
+        implementacao: [notebooks/historico/06_avaliacao_operacional.ipynb, notebooks/historico/07_ligacao_por_agenda.ipynb]
+        verificacao: [revisão da estrutura de pastas]
+      - id: CA-013
+        texto: O gerador de experimentos cria novos notebooks em `notebooks/historico/`
+        implementacao: [scripts/novo_experimento.py]
+        verificacao: [revisão do script]
+      - id: CA-014
+        texto: README e requisitos com os caminhos atualizados
+        implementacao: [README.md, requisitos.yml]
+        verificacao: [scripts/rastreabilidade.py valida todos os caminhos citados]
