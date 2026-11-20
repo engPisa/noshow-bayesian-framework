@@ -10,7 +10,6 @@ __pycache__/
 # dados: a base não é publicada
 data/raw/
 data/processed/
-data/external/
 medical-appointments-no-show-en.csv
 resultados/experimentos/*/predicoes.parquet
 

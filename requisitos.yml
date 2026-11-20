@@ -584,3 +584,20 @@ issues:
         texto: README e requisitos com os caminhos atualizados
         implementacao: [README.md, requisitos.yml]
         verificacao: [scripts/rastreabilidade.py valida todos os caminhos citados]
+  37:
+    titulo: "Revisão da fase 9: texto do SMOTENC, histórico das fases 7 e 8 e data/external"
+    pr: 38
+    requisitos:
+      - id: CA-015
+        texto: Síntese do notebook 04 explicita quando o SMOTENC ajuda, quando não ajuda e que a conclusão anterior foi superada
+        implementacao: [notebooks/04_experimentos.ipynb (Efeito do SMOTENC)]
+        verificacao: [números conferidos em resultados/artigo_sem_sobreposicao/completo/h3_validacao_cruzada.csv]
+      - id: CA-016
+        texto: Notebooks e registros das fases 7 e 8 marcados como histórico exploratório, com referência ao protocolo final
+        implementacao: [notebooks/historico/06_avaliacao_operacional.ipynb, notebooks/historico/07_ligacao_por_agenda.ipynb,
+                        resultados/experimentos/vN/registro.md]
+        verificacao: [revisão dos notebooks 05 v6–v8, 06 e 07 e dos registros v6–v8]
+      - id: CA-017
+        texto: "`data/external/` volta a ser versionada como antes"
+        implementacao: [.gitignore]
+        verificacao: ["`git ls-files data/external` lista os três arquivos versionados"]

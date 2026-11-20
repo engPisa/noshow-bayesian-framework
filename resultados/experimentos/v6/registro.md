@@ -1,3 +1,9 @@
+> **Histórico exploratório (fases 7 e 8).** Este notebook foi produzido com o protocolo anterior, **antes da
+> correção da sobreposição entre treino e teste** (PR #36) e sem a seleção interna de faixas, ESS e balanceamento.
+> Os números e conclusões abaixo registram o processo de desenvolvimento, mas **não sustentam os resultados do
+> artigo**. O protocolo final está nos notebooks `03_rede_bayesiana`, `04_experimentos` e
+> `08_validacao_sensibilidade_e_base_externa`, com resultados em `resultados/artigo_sem_sobreposicao/`.
+
 **Data:** 01/11/2026 · **Base de comparação:** v4 (a v5 foi descartada) · **Mudança:** correção da priori (Saerens)
 para a taxa dos últimos 6 meses conhecidos, em cada retreino trimestral
 

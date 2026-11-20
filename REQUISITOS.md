@@ -2,7 +2,7 @@
 
 Gerada por `scripts/rastreabilidade.py` a partir de `requisitos.yml` (fonte única). Não edite à mão.
 
-**107 itens** · 107 entregues · 0 em andamento · **52 com teste automatizado** (49%); os demais são verificados por execução de notebook ou revisão.
+**110 itens** · 110 entregues · 0 em andamento · **52 com teste automatizado** (47%); os demais são verificados por execução de notebook ou revisão.
 
 Prefixos: `RF` funcional · `RNF` não funcional · `CA` critério de tarefa técnica.
 
@@ -115,3 +115,6 @@ Prefixos: `RF` funcional · `RNF` não funcional · `CA` critério de tarefa té
 | **CA-012** | Notebooks 05–07 em `notebooks/historico/` | #35 | `notebooks/historico/06_avaliacao_operacional.ipynb`<br>`notebooks/historico/07_ligacao_por_agenda.ipynb` | revisão da estrutura de pastas | #36 |
 | **CA-013** | O gerador de experimentos cria novos notebooks em `notebooks/historico/` | #35 | `scripts/novo_experimento.py` | revisão do script | #36 |
 | **CA-014** | README e requisitos com os caminhos atualizados | #35 | `README.md`<br>`requisitos.yml` | scripts/rastreabilidade.py valida todos os caminhos citados | #36 |
+| **CA-015** | Síntese do notebook 04 explicita quando o SMOTENC ajuda, quando não ajuda e que a conclusão anterior foi superada | #37 | `notebooks/04_experimentos.ipynb (Efeito do SMOTENC)` | números conferidos em resultados/artigo_sem_sobreposicao/completo/h3_validacao_cruzada.csv | #38 |
+| **CA-016** | Notebooks e registros das fases 7 e 8 marcados como histórico exploratório, com referência ao protocolo final | #37 | `notebooks/historico/06_avaliacao_operacional.ipynb`<br>`notebooks/historico/07_ligacao_por_agenda.ipynb`<br>`resultados/experimentos/vN/registro.md` | revisão dos notebooks 05 v6–v8<br>06 e 07 e dos registros v6–v8 | #38 |
+| **CA-017** | `data/external/` volta a ser versionada como antes | #37 | `.gitignore` | `git ls-files data/external` lista os três arquivos versionados | #38 |
