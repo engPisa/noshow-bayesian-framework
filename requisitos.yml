@@ -482,7 +482,7 @@ issues:
         verificacao: [execução completa do notebook]
   32:
     titulo: Protocolo sem sobreposição entre treino e teste
-    pr: null
+    pr: 36
     cenarios: {1: [RF-073], 2: [RF-074]}
     requisitos:
       - id: RF-073
@@ -507,7 +507,7 @@ issues:
         verificacao: [tests::test_alvo_invalido_nao_vira_comparecimento]
   33:
     titulo: Protocolo ajustado da H1/H3 com seleção interna
-    pr: null
+    pr: 36
     cenarios: {1: [RF-077], 2: [RF-080]}
     requisitos:
       - id: RF-077
@@ -553,7 +553,7 @@ issues:
         verificacao: [revisão dos arquivos de protocolo]
   34:
     titulo: Validação de sensibilidade e em base externa
-    pr: null
+    pr: 36
     cenarios: {1: [RF-086]}
     requisitos:
       - id: RF-085
@@ -570,7 +570,7 @@ issues:
         verificacao: [execução registrada pelo autor em resultados/validacao_sensibilidade_e_base_externa.csv]
   35:
     titulo: Separar tentativas exploratórias em notebooks/historico
-    pr: null
+    pr: 36
     requisitos:
       - id: CA-012
         texto: Notebooks 05–07 em `notebooks/historico/`
